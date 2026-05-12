@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width", initial-scale=1.0>
+    <meta name="author" content="selmuel">
+    <link rel="icon" href="../图片/favicon.png" type="image/png">
+</head>
+
+<style>
+    h1{
+        font-size:40px;
+    }
+    body {
+        height:100vh;
+        margin:0;
+        background-color:linen;
+        cursor:none;
+        background-size:400% 400%;
+        padding:0 0 0 0;
+    }
+
+    .top-bar {
+        width:100%;
+        height:100px;
+        border-bottom: 1px solid #e5d6c0;
+        background-color: burlywood;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    }
+
+    .mouse {
+  width: 50px;
+  height: 50px;
+  background-image: url("miku指针去白1.gif");
+  background-size: contain;   /* 让图片完整显示，不变形 */
+  background-repeat: no-repeat; /* 防止图案重复平铺 */
+  background-position: center; /* 图案居中 */
+
+  /* 关键1：固定在屏幕上，不跟着网页滚动跑 */
+  position: fixed;
+
+  /* 关键2：永远在最上层，不被别的东西挡住 */
+  z-index: 9999;
+
+  /* 关键3：它不能挡住按钮点击！ */
+  pointer-events: none;
+}
+.logo{
+    /* 限制最大高度，不会超出导航栏 */
+    height: 100px;
+    /* 宽度自动等比例缩放，不会变形 */
+    width: auto;
+    margin-left: 75px;
+    transform: scale(2);
+    transition: all 0.2s ease;
+}
+.logo:hover{
+    filter: drop-shadow(0 0 8px #f8e8ee) drop-shadow(0 0 15px #f0d4e0);
+    cursor:pointer
+}
+
+/* 主体左右布局容器 */
+.wrap {
+    display: flex;
+    min-height:100vh;
+}
+
+/* 左侧侧边栏 固定宽度 */
+.sidebar {
+    width: 200px;
+    background: #fff8ee;
+    /* 去掉原来的上边框，让顶部直接和导航栏对齐 */
+    border-right: 1px solid #e5d6c0;
+    /* 把内边距调整一下，顶部留白和导航栏更协调 */
+    padding: 20px 20px 30px;
+    /* 加一个轻微的顶部阴影，和导航栏的阴影呼应 */
+    box-shadow: inset 0 4px 6px rgba(0,0,0,0.03);
+    /* 让侧边栏和顶部导航栏之间没有空隙 */
+    margin-top: 0;
+    overflow-y: auto;
+}
+
+/* 右侧内容区 自动占剩余空间 */
+.main {
+    flex: 1;
+    padding: 40px;
+    line-height: 2;
+    font-size: 17px;
+    color: #333;
+    margin-left:20px;
+}
+
+/* 清除列表默认样式 */
+ul {
+    list-style: none;
+}
+
+/* 一级菜单 */
+.menu > li {
+    margin-bottom: 12px;
+}
+.menu > li > a {
+    display: block;
+    padding: 8px 10px;
+    font-size: 16px;
+    font-weight: bold;
+    color: #5c3c21;
+    text-decoration: none;
+    border-radius: 6px;
+    transition: 0.2s;
+}
+.menu > li > a:hover {
+    background: #ebd9c2;
+}
+
+/* 二级菜单：缩进 */
+.sub1 {
+    padding-left: 20px;
+    margin: 6px 0;
+    display:none;
+}
+.sub1 li a {
+    padding: 6px 10px;
+    color: #666;
+    text-decoration: none;
+    border-radius: 6px;
+    transition: 0.2s;
+    font-size: 15px;
+
+}
+.sub1 li a:hover {
+    background: #f0e2cf;
+}
+.sub1.active {
+    display:block;
+}
+
+/* 三级菜单：再缩进 */
+.sub2 {
+    padding-left: 20px;
+    margin: 4px 0;
+    display:none;
+}
+
+.sub2 li a {
+    font-size: 14px;
+    color: #777;
+}
+.content {
+  display: none; /* 默认全部隐藏 */
+}
+.content.active {
+  display: block; /* 加 active 就显示 */
+}
+</style>
+
+<body>
+    <div class="mouse"></div>
+    <script src="鼠标.js"></script>
+    <div class="top-bar"><a href="主页.html"><img class="logo" src="../图片/文字logo去白.png" alt="sera&milu"></a></div>
+    <!-- 顶部栏 -->
+
+<!-- 主体：左目录 + 右内容 -->
+<div class="wrap">
+    <!-- 左侧树形分叉目录 -->
+    <div class="sidebar">
+        <ul class="menu">
+            <!-- 一级分类1 -->
+            <li>
+                <a data-target="prologue">前言</a>
+            </li>
+            
+        </ul>
+    </div>
+
+    <!-- 右侧内容区 -->
+    <div class="main">
+        <div id="prologue" class="content">这是塞拉爱米露的音乐部分，塞拉爱米露是一名狂热的vocaloid粉丝，除此之外也欣赏其他的多种音乐风格。<br>
+        这里记录着塞拉爱米露对一些音乐的评价以及塞拉爱米露自己的音乐尝试。</div>
+        <div id="txtBox" class="content"></div>
+
+    </div>
+</div>
+
+<script>
+// 1. 获取所有菜单
+let links = document.querySelectorAll("a");
+
+// 2. 获取两个核心内容区
+let prologue = document.getElementById("prologue");
+let txtBox    = document.getElementById("txtBox");
+
+// 3. 给每个菜单加点击
+links.forEach(link => {
+  link.onclick = function() {
+
+    // ======================
+    // 第一步：全部隐藏
+    // ======================
+    prologue.classList.remove("active");
+    txtBox.classList.remove("active");
+
+    // ======================
+    // 情况A：点击普通菜单（显示 prologue 或其他div）
+    // ======================
+    if (this.dataset.target) {
+      let targetId = this.dataset.target;
+      document.getElementById(targetId).classList.add("active");
+    }
+
+    // ======================
+    // 情况B：点击 txt 菜单（显示 txtBox）
+    // ======================
+    if (this.dataset.file) {
+      let filePath = this.dataset.file;
+
+      fetch(filePath)
+      .then(res => res.text())
+      .then(text => {
+        txtBox.innerText = text;   // 把文本放进去
+        txtBox.classList.add("active"); // 显示盒子
+      })
+    }
+  };
+});
+
+// 默认显示首页
+prologue.classList.add("active");
+
+// 选中所有1级菜单的链接
+const menuLinks = document.querySelectorAll(".menu > li > a");
+
+menuLinks.forEach(link => {
+  link.addEventListener("click", function(e) {
+    // 找到这个1级菜单后面的2级菜单列表
+    const sub1 = this.nextElementSibling;
+
+    // 如果后面真的有2级菜单，就切换它的显示/隐藏状态
+    if (sub1 && sub1.classList.contains("sub1")) {
+      sub1.classList.toggle("active");
+    }
+  });
+});
+</script>
+
+</body>

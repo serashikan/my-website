@@ -1,0 +1,184 @@
+<! DOCTYPE html>
+<html lang = "zh-cn">
+<head>
+    <meta charset = "UTF-8">
+    <meta name = "viewport” content = "width = device-width, initial-scale = 1.0">
+    <meta name = "author” content = "selmuel">
+    <link rel="icon" href="../图片/favicon.png" type="image/png">
+</head>
+
+
+<title>塞拉爱米露的个人网站</title>
+
+<style>
+    h1{
+        font-family:"PingFang SC" ;
+    }
+    p{
+        color:black ;
+        font-size:16px;
+    }
+
+    .light:hover{
+        color:pink;
+    }
+
+    a {
+  /* 去掉下划线 */
+  text-decoration: none;
+  /* 去掉默认蓝色紫色文字色 */
+  color: inherit;
+}
+
+    a:visited {
+  color: inherit;
+}
+
+    body {
+        height:100%;
+        margin:0;
+        background-color:linen;
+        cursor:none;
+        background-size:400% 400%;
+        padding:0 0 500px;
+    }
+
+    .top-bar {
+        width:100%;
+        height:100px;
+        border:none;
+        background-color: burlywood;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+        
+    }
+
+    .hide-text-box {
+  position: relative;
+  width:fit-content;
+  cursor: pointer;
+}
+
+.hide-mask {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background: #222; /* 黑块颜色 */
+  transition: all 0.2s ease;
+  inset: 0;
+  flex-shrink: 0;
+}
+
+.hide-text-box:hover .hide-mask {
+  opacity: 0;
+}
+
+    .mouse {
+  width: 50px;
+  height: 50px;
+  background-image: url("miku指针去白1.gif");
+  background-size: contain;   /* 让图片完整显示，不变形 */
+  background-repeat: no-repeat; /* 防止图案重复平铺 */
+  background-position: center; /* 图案居中 */
+
+  /* 关键1：固定在屏幕上，不跟着网页滚动跑 */
+  position: fixed;
+
+  /* 关键2：永远在最上层，不被别的东西挡住 */
+  z-index: 9999;
+
+  /* 关键3：它不能挡住按钮点击！ */
+  pointer-events: none;
+}
+
+.box{
+    width:400px;
+    height:200px;
+    background-color: rgba(255,255,255,0.85);
+    border-radius:16px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+    border: 1px solid rgba(255,255,255,0.5);
+    backdrop-filter: blur(6px);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border: 3px dashed #f8e8ee;
+}
+
+.box:hover {
+    /* 背景变深一点 */
+    background-color: #f5f5f5;
+    /* 阴影变大更有层次 */
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    /* 微微上浮一点点，很灵动 */
+    transform: translateY(-4px);
+}
+
+.title{
+    font-size: 24px;
+  font-weight: 600;
+  color: #444;
+  /* 字间距宽松一点更可爱 */
+  letter-spacing: 2px;
+  /* 轻微文字阴影 柔和 */
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.08);
+}
+
+.logo{
+    /* 限制最大高度，不会超出导航栏 */
+    height: 100px;
+    /* 宽度自动等比例缩放，不会变形 */
+    width: auto;
+    margin-left: 75px;
+    transform: scale(2);
+    transition: all 0.2s ease;
+}
+
+.logo:hover{
+    filter: drop-shadow(0 0 8px #f8e8ee) drop-shadow(0 0 15px #f0d4e0);
+    cursor:pointer
+}
+</style>
+<div class="mouse"></div>
+<script src="鼠标.js"></script>
+<body style="display:grid">
+    <div class="top-bar"><a href="主页.html"><img class="logo" src="../图片/文字logo去白.png" alt="sera&milu"></a></div>
+    <div>
+        <h1 class="title" style="display: flex;align-items: center;justify-content: center;font-size:30px;">&hearts;欢迎来到塞拉爱米露的个人网站！&hearts;</h1>
+        <div style="display:flex;justify-content:center;"><img src="../图片/レぜ.png" width=300 ></div>
+        <div style="display:flex;justify-content:center;"><div class="hide-text-box" style="display:flex;justify-content: center;"><s>デンジ君みたいなおもしろい人は、初めて.png</s><span class="hide-mask"></span></div></div>
+        <hr>
+        <p style="margin-left:20px">这是塞拉爱米露的个人网站，你可以在这里看到塞拉爱米露感兴趣的各种东西，我时不时会把学习这些奇奇怪怪东西的过程记录在这里，欢迎参观。
+        <s>嘲笑还请手下留情。</s></p>
+    </div>
+
+    <h2 class="title" style="display:flex;justify-content:center;">塞拉爱米露的分区</h2>
+    <div style="display:flex;gap:20px;justify-content: center;margin-bottom:20px;">
+        <div style="display: flex;flex-direction:row;justify-content: center;column-gap:20px">
+            <a href="塞拉.html"><div class="box"><h1 style="margin:20px">塞拉</h1>
+            <p style="margin:20px">本大爷就是塞拉。</p></div></a>
+            <a href="文学.html"><div class="box"><h1 style="margin:20px">文学（以及拙劣的小说）</h1>
+            <p style="margin:20px">“他再也没有写过小说。”</p>
+            </div></a>
+            <a href="音乐.html"><div class="box"><h1 style="margin:20px">音乐（以及视频）</h1>
+            <p style="margin:20px">This is TRUE music.</p>
+        </div></a>
+        </div>
+    </div>
+
+    <div style="display:flex;gap:20px;justify-content: center;margin-bottom:20px;">
+        <div style="display: flex;flex-direction:row;justify-content: center;column-gap:20px">
+            <a href="数学.html"><div class="box"><h1 style="margin:20px">数学（及与之相关之物）</h1>
+            <p style="margin:20px">其实每个人都很擅长数学，只是大家擅长的是不同种类的数学。</p>
+        </div></a>
+            <a href="技术.html"><div class="box"><h1 style="margin:20px">技术（以及实例）</h1>
+            <p style="margin:20px">菜菜</p></div></a>
+            <a href="米露.html"><div class="box"><h1 style="margin:20px">米露</h1>
+            <p style="margin:20px">米露很高兴遇见你。</p></div></a>
+        </div>
+
+    </div>
+
+</body>
+
+</html>

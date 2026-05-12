@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width", initial-scale=1.0>
+    <meta name="author" content="selmuel">
+</head>
+<link rel="shortcut icon" href="../图片/レぜ.png" type="image/png">
+<title>(^▽^)/ 嗨～</title>
+
+<style>
+    body {
+  margin: 0;
+  min-height: 100vh;
+  /* 多层温柔肉粉渐变 */
+  background: linear-gradient(
+    45deg,
+    #ffeede,
+    #ffe6dd,
+    #ffe0d2,
+    #fff0e8,
+    #ffe8df
+  );
+
+  background-size: 400% 400%;
+  cursor:none;
+  display:flex;
+  flex-direction: column;
+  padding: 0px 0 500px;
+  gap:10px;
+
+  
+
+}
+
+
+    .hidden-all >*{
+    opacity: 0;
+  visibility: hidden;
+}
+
+    .hidden-all::before{
+        opacity:0;
+        visibility: hidden ;
+    }
+
+    .hidden-all #mouse{
+    opacity:1;
+  visibility: visible;
+}
+
+
+    .midbox{
+        width:1000px;
+        height:80px;
+        background-color: white;
+        border-radius: 16px;
+        border:2px solid #FF8FB1;
+        box-shadow: 0 2px 200px rgba(0, 0, 0, 0.5);
+        margin: 10px  auto;
+        display: flex;
+    }
+
+    .big-box {
+        width: 1000px;     /* 宽度自己改 */
+        height: 500px;    /* 高度自己改 */
+        background-color: white;
+        border-radius: 16px; /* 圆角更好看 */
+        border:2px solid #FF8FB1;
+    
+        /* 核心：水平居中 */
+        margin: 150px  auto 10px auto;
+        display: flex;
+        justify-content:flex-start;
+        align-items:top;
+        gap:30px;
+        box-shadow: 0 2px 200px rgba(0, 0, 0, 0.5);
+    }
+
+    .text {
+        margin-top: 0px;
+        margin-left: 40px;
+        margin-bottom: 0px;
+    }
+    .row {
+  display: flex;        /* 开启并排 */
+  align-items: center;  /* 垂直居中对齐 */
+  gap: 12px;            /* 图片和文字之间的距离 */
+}
+    body::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: url("../图片/are\ you\ lost墙纸.png"); /* 你的飞机图案 */
+        background-repeat: repeat;
+        opacity: 0.5; /* 调整图案透明度，越低越淡，不会挡住主背景 */
+        pointer-events: none; /* 不影响页面点击交互 */
+        z-index: -1;
+        
+    }
+
+    .icon{
+        background-image: url("../图片/icon去背景.png");
+        width: 100px;
+        height: 100px;
+        background-size: contain;
+        background-repeat: no-repeat;
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+        
+    }
+
+    @font-face {
+        font-family: "破晓像素";
+        src: url("../字体/破晓像素.ttf");
+    }
+
+    .mouse {
+  width: 50px;
+  height: 50px;
+  background-image: url("../图片/miku指针去白1.gif");
+  background-size: contain;   /* 让图片完整显示，不变形 */
+  background-repeat: no-repeat; /* 防止图案重复平铺 */
+  background-position: center; /* 图案居中 */
+
+  /* 关键1：固定在屏幕上，不跟着网页滚动跑 */
+  position: fixed;
+
+  /* 关键2：永远在最上层，不被别的东西挡住 */
+  z-index: 9999;
+
+  /* 关键3：它不能挡住按钮点击！ */
+  pointer-events: none;
+}
+
+.btn{
+    width:100px;
+    height:100px;
+    border-radius:50%;
+    background-color: #B5EAD7;
+    color: #2c6e63;
+    border: none;
+    border-radius: 30px;
+    font-size: 16px;
+    cursor: none;
+    /* 顺滑过渡 */
+    transition: all 0.3s ease;
+    margin:300px auto 0 auto;
+    display: flex;
+    align-items:center;
+    justify-content: center;
+}
+
+.btn:hover{
+    background-color: #78d2b7;
+    /* 可选：微微放大+柔光 */
+    transform: scale(1.05);
+    box-shadow: 0 0 12px #b5ead7;
+}
+
+</style>
+<div id="mouse" class="mouse"></div>
+<script src="鼠标.js"></script>
+<body>
+<div class="big-box">
+    <div>
+        <img src="../图片/mephisto.png" width="450px" style="border-radius: 16px;">
+        <p class="text" style="margin-left:150px; font-family: 破晓像素;" >～梅菲斯特小姐～</p>
+        <p class="text" style="margin-left:100px"><s>（塞拉太懒了所以是让ai生成的捏）</s></p>
+    </div>
+
+
+    <div style="
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content:center;">
+        <div class="icon" style="display: inline-block;"></div>
+        <h1 style="font-size: 25px;">欢迎来到塞拉爱米露的个人网站！<br>Welcome to Selmuel's personal website!<br>世良詩観の個人Webサイトへようこそ！</h1>
+        <a href="主页.html">
+            <button style="
+                background: linear-gradient(to right, rgb(171, 216, 189), #b89cd8);
+                border: none;
+                border-radius: 8px;
+                padding: 8px 30px;
+                color: #fff;
+                font-size: 20px;
+                cursor:pointer;
+                font-family:'破晓像素';
+                line-height: 1;
+                ">
+                进入</button>
+
+        </a>
+    </div>
+</div>
+<div class="midbox"><p style="font-family: '破晓像素'; color: #BDE0FE;">（按z键切换鼠标样式）<br>
+你肯定不知道单击任意位置可以放一朵小烟花!&hearts;<br>
+一次只能放一朵，可是，如果你靠近我的身边，我心里的烟花是千千万万朵哦。</p></div>
+<button id="Fire" class="btn"><h1 style="font-family: '破晓像素';" >点火</h1></button>
+<script src="花火.js"></script>
+</body>
+</html>
