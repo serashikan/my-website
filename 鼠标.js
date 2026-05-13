@@ -11,7 +11,7 @@ const mouse = document.querySelector('.mouse');
 
 // 鼠标图片地址
 const mouseImgList = [
-  "url('图片/指针去白.png')",
+  "url('图片/指针去白.webp')",
   "url('图片/miku指针去白1.gif')",
 ];
 
