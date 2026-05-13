@@ -13,7 +13,7 @@ const originBodyStyle = {
   overflowY:""
 };
 
-let bgAudio = new Audio("音频/爆弾.m4a");
+let bgAudio = new Audio("音频文件/爆弾.m4a");
 bgAudio.loop = true;
 bgAudio.volume = 0.35;
 
