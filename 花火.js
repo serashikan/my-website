@@ -201,7 +201,7 @@ btn.addEventListener('click', function() {
     // document.body.style.background = "...";
     document.body.classList.add('hidden-all');
     document.body.style.background = 
-    "url('图片/花火大会.png'), linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)";
+    "url('图片/hanabitaikai.png'), linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)";
     document.body.style.backgroundSize = "1806px 1010px,100% 200%";
     document.body.style.backgroundPosition = "center 200px,center";
     document.body.style.backgroundRepeat = "no-repeat,no-repeat";
