@@ -172,6 +172,11 @@ ul {
             </li>
             <li>
                 <a>小游戏</a>
+                <ul class="sub1">
+                    <li>
+                        <a data-file="game-breakout.js">打砖块</a>
+                    </li>
+                </ul>
             </li>
         </ul>
     </div>
@@ -179,10 +184,10 @@ ul {
     <!-- 右侧内容区 -->
     <div class="main">
         <div id="prologue" class="content">这是塞拉爱米露的技术部分，塞拉爱米露是一名主业是生物技术的学生。<br>
-            同时塞拉爱米露也很喜欢尝试cs相关的技术内容，这里会记录塞拉爱米露觉得有意思的cs与生物医学技术的学习哦。
+            同时塞拉爱米露也很喜欢尝试cs相关的技术内容，这里会记录塞拉爱米露觉得有意思的cs与生物医学技术的学习哦。</div>
         <div id="txtBox" class="content"></div>
 
-    </div>
+    
 </div>
 
 <script>
@@ -191,17 +196,22 @@ let links = document.querySelectorAll("a");
 
 // 2. 获取两个核心内容区
 let prologue = document.getElementById("prologue");
-let txtBox    = document.getElementById("txtBox");
+let txtBox = document.getElementById("txtBox");
 
 // 3. 给每个菜单加点击
 links.forEach(link => {
-  link.onclick = function() {
+  link.onclick = async function() {
 
     // ======================
     // 第一步：全部隐藏
     // ======================
     prologue.classList.remove("active");
     txtBox.classList.remove("active");
+    txtBox.innerHTML = "";
+
+    if (txtBox._module) {        // 如果这个 div 里有游戏
+    txtBox._module.stop();     // 停止游戏
+  }
 
     // ======================
     // 情况A：点击普通菜单（显示 prologue 或其他div）
@@ -216,14 +226,34 @@ links.forEach(link => {
     // ======================
     if (this.dataset.file) {
       let filePath = this.dataset.file;
+      let ext = filePath.split('.').pop().toLowerCase();
 
-      fetch(filePath)
-      .then(res => res.text())
-      .then(text => {
+      console.log("文件路径=", filePath);
+      console.log("后缀=", ext);
+
+      if(ext==='txt'){
+        fetch(filePath)
+        .then(res => res.text())
+        .then(text => {
         txtBox.innerText = text;   // 把文本放进去
         txtBox.classList.add("active"); // 显示盒子
-      })
+        })}
+
+        if(ext==='js'){
+            console.log("----- 进入 JS 加载逻辑 -----");
+            // 动态加载 JS 文件
+            const module = await import(`./${filePath}`);
+            // 把模块存到元素上，方便切换时停止
+            txtBox._module = module;
+            // 初始化：把游戏渲染到当前这个 div 里
+            module.init(txtBox);
+            // 启动游戏
+            module.start();
+            txtBox.classList.add("active");
+            }
     }
+
+    
   };
 });
 
