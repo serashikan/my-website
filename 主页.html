@@ -1,184 +1,268 @@
-<! DOCTYPE html>
-<html lang = "zh-cn">
+<!DOCTYPE html>
+<html lang="zh-CN">
+
 <head>
-    <meta charset = "UTF-8">
-    <meta name = "viewport” content = "width = device-width, initial-scale = 1.0">
-    <meta name = "author” content = "selmuel">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="selmuel">
+    <title>塞拉爱米露的个人网站</title>
     <link rel="icon" href="图片/favicon.png" type="image/png">
+
+    <!-- 全站共享样式 -->
+    <link rel="stylesheet" href="风格.css">
+
+    <style>
+        /* ===== 本页专属：枢纽页版式 ===== */
+
+        body { padding-bottom: clamp(50px, 8vh, 90px); }
+
+        /* ---------- 开场 ---------- */
+        .page-hero {
+            width: min(880px, calc(100% - 40px));
+            margin: clamp(26px, 5vh, 54px) auto clamp(26px, 4vh, 42px);
+            text-align: center;
+        }
+
+        .title {
+            margin: 0 0 22px;
+            font-size: clamp(22px, 3.4vw, 32px);
+            letter-spacing: .06em;
+            /* 焦糖→藕粉的暖色渐变字 */
+            background: linear-gradient(100deg, #8a6845 0%, #bb7f92 52%, #a8825a 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .page-hero .portrait {
+            display: block;
+            width: min(300px, 70%);
+            height: auto;
+            margin: 0 auto;
+            border-radius: var(--r-lg);
+            border: 1px solid var(--line-2);
+            box-shadow: var(--sh-3);
+        }
+
+        .gag {
+            margin: 16px 0 0;
+            font-size: 14px;
+            color: var(--ink-3);
+        }
+
+        .lead {
+            margin: 0 auto;
+            max-width: 62ch;
+            font-size: 16px;
+            line-height: 2.05;
+            color: var(--ink-2);
+            text-align: left;
+        }
+
+        /* 悬停才显形的黑块（保留原来的小机关） */
+        .hide-text-box {
+            position: relative;
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .hide-mask {
+            position: absolute;
+            inset: 0;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #4a3a2c, #2f251c);
+            transition: opacity .28s var(--ease);
+        }
+        .hide-text-box:hover .hide-mask { opacity: 0; }
+
+        /* ---------- 分区标题 ---------- */
+        .section-title {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            margin: clamp(30px, 5vh, 52px) auto 22px;
+            font-size: clamp(19px, 2.4vw, 25px);
+            letter-spacing: .08em;
+            color: var(--ink);
+        }
+        .section-title::before,
+        .section-title::after {
+            content: "";
+            width: clamp(28px, 6vw, 74px);
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--brand));
+        }
+        .section-title::after {
+            background: linear-gradient(90deg, var(--brand), transparent);
+        }
+
+        /* ---------- 分区卡片 ---------- */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(288px, 1fr));
+            gap: 20px;
+            width: min(1080px, calc(100% - 40px));
+            margin: 0 auto;
+        }
+
+        .box {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            min-height: 190px;
+            padding: 24px 24px 20px;
+            overflow: hidden;
+            background: linear-gradient(180deg, var(--surface), var(--paper));
+            border: 1px solid var(--line);
+            border-radius: var(--r-md);
+            box-shadow: var(--sh-1);
+            transition: transform .28s var(--ease), box-shadow .28s var(--ease),
+                        border-color .28s var(--ease), background .28s var(--ease);
+        }
+        /* 顶部一条渐变色带，悬停时从左展开 */
+        .box::before {
+            content: "";
+            position: absolute;
+            inset: 0 0 auto 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--brand-light), var(--accent), var(--brand-light));
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform .38s var(--ease);
+        }
+
+        .box h3 {
+            margin: 0 0 10px;
+            font-size: 19px;
+            line-height: 1.5;
+            color: var(--ink);
+        }
+        .box p {
+            margin: 0;
+            font-size: 14.5px;
+            line-height: 1.9;
+            color: var(--ink-2);
+        }
+
+        .box-more {
+            margin-top: auto;
+            padding-top: 16px;
+            font-size: 13px;
+            letter-spacing: .1em;
+            color: var(--brand-dark);
+            opacity: 0;
+            transform: translateX(-6px);
+            transition: opacity .28s var(--ease), transform .28s var(--ease);
+        }
+        .box-more::after {
+            content: " →";
+            transition: margin-left .28s var(--ease);
+        }
+
+        .box:hover {
+            transform: translateY(-5px);
+            border-color: var(--brand-light);
+            background: linear-gradient(180deg, #fffefb, var(--brand-tint));
+            box-shadow: var(--sh-3);
+        }
+        .box:hover::before { transform: scaleX(1); }
+        .box:hover .box-more { opacity: 1; transform: none; }
+
+        @media (prefers-reduced-motion: no-preference) {
+            .big-box, .page-hero, .card-grid { animation: rise-in .6s var(--ease) both; }
+        }
+
+        .light:hover { color: var(--accent-deep); }
+
+        /* 窄屏：卡片单列时不用再撑那么高，否则要滚很久 */
+        @media (max-width: 620px) {
+            .box { min-height: 0; padding: 20px 20px 18px; }
+            .box-more { padding-top: 12px; }
+        }
+    </style>
 </head>
 
+<body>
+    <div class="mouse"></div>
 
-<title>塞拉爱米露的个人网站</title>
+    <div class="top-bar">
+        <a class="logo-slot" href="主页.html" aria-label="回到主页">
+            <img class="logo" src="图片/文字logo去白.webp" alt="sera&amp;milu">
+        </a>
+    </div>
 
-<style>
-    h1{
-        font-family:"PingFang SC" ;
-    }
-    p{
-        color:black ;
-        font-size:16px;
-    }
+    <header class="page-hero">
+        <h1 class="title">&hearts; 欢迎来到塞拉爱米露的个人网站！&hearts;</h1>
 
-    .light:hover{
-        color:pink;
-    }
+        <img class="portrait" src="图片/reze.webp" alt="蕾洁">
 
-    a {
-  /* 去掉下划线 */
-  text-decoration: none;
-  /* 去掉默认蓝色紫色文字色 */
-  color: inherit;
-}
+        <p class="gag">
+            <span class="hide-text-box">
+                <s>デンジ君みたいなおもしろい人は、初めて.png</s>
+                <span class="hide-mask"></span>
+            </span>
+        </p>
 
-    a:visited {
-  color: inherit;
-}
-
-    body {
-        height:100%;
-        margin:0;
-        background-color:linen;
-        cursor:none;
-        background-size:400% 400%;
-        padding:0 0 500px;
-    }
-
-    .top-bar {
-        width:100%;
-        height:100px;
-        border:none;
-        background-color: burlywood;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.25);
-        
-    }
-
-    .hide-text-box {
-  position: relative;
-  width:fit-content;
-  cursor: pointer;
-}
-
-.hide-mask {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  background: #222; /* 黑块颜色 */
-  transition: all 0.2s ease;
-  inset: 0;
-  flex-shrink: 0;
-}
-
-.hide-text-box:hover .hide-mask {
-  opacity: 0;
-}
-
-    .mouse {
-  width: 50px;
-  height: 50px;
-  background-image: url("miku指针去白1.gif");
-  background-size: contain;   /* 让图片完整显示，不变形 */
-  background-repeat: no-repeat; /* 防止图案重复平铺 */
-  background-position: center; /* 图案居中 */
-
-  /* 关键1：固定在屏幕上，不跟着网页滚动跑 */
-  position: fixed;
-
-  /* 关键2：永远在最上层，不被别的东西挡住 */
-  z-index: 9999;
-
-  /* 关键3：它不能挡住按钮点击！ */
-  pointer-events: none;
-}
-
-.box{
-    width:400px;
-    height:200px;
-    background-color: rgba(255,255,255,0.85);
-    border-radius:16px;
-    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
-    border: 1px solid rgba(255,255,255,0.5);
-    backdrop-filter: blur(6px);
-    transition: all 0.3s ease;
-    cursor: pointer;
-    border: 3px dashed #f8e8ee;
-}
-
-.box:hover {
-    /* 背景变深一点 */
-    background-color: #f5f5f5;
-    /* 阴影变大更有层次 */
-    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
-    /* 微微上浮一点点，很灵动 */
-    transform: translateY(-4px);
-}
-
-.title{
-    font-size: 24px;
-  font-weight: 600;
-  color: #444;
-  /* 字间距宽松一点更可爱 */
-  letter-spacing: 2px;
-  /* 轻微文字阴影 柔和 */
-  text-shadow: 2px 2px 4px rgba(0,0,0,0.08);
-}
-
-.logo{
-    /* 限制最大高度，不会超出导航栏 */
-    height: 100px;
-    /* 宽度自动等比例缩放，不会变形 */
-    width: auto;
-    margin-left: 75px;
-    transform: scale(2);
-    transition: all 0.2s ease;
-}
-
-.logo:hover{
-    filter: drop-shadow(0 0 8px #f8e8ee) drop-shadow(0 0 15px #f0d4e0);
-    cursor:pointer
-}
-</style>
-<div class="mouse"></div>
-<script src="鼠标.js"></script>
-<body style="display:grid">
-    <div class="top-bar"><a href="主页.html"><img class="logo" src="图片/文字logo去白.webp" alt="sera&milu"></a></div>
-    <div>
-        <h1 class="title" style="display: flex;align-items: center;justify-content: center;font-size:30px;">&hearts;欢迎来到塞拉爱米露的个人网站！&hearts;</h1>
-        <div style="display:flex;justify-content:center;"><img src="图片/reze.webp" width=300 ></div>
-        <div style="display:flex;justify-content:center;"><div class="hide-text-box" style="display:flex;justify-content: center;"><s>デンジ君みたいなおもしろい人は、初めて.png</s><span class="hide-mask"></span></div></div>
         <hr>
-        <p style="margin-left:20px">这是塞拉爱米露的个人网站，你可以在这里看到塞拉爱米露感兴趣的各种东西，我时不时会把学习这些奇奇怪怪东西的过程记录在这里，欢迎参观。
-        <s>嘲笑还请手下留情。</s></p>
+
+        <p class="lead">
+            这是塞拉爱米露的个人网站，你可以在这里看到塞拉爱米露感兴趣的各种东西，我时不时会把学习这些奇奇怪怪东西的过程记录在这里，欢迎参观。
+            <s>嘲笑还请手下留情。</s>
+        </p>
+    </header>
+
+    <h2 class="section-title">塞拉爱米露的分区</h2>
+
+    <div class="card-grid">
+        <a class="box" href="塞拉.html">
+            <h3>塞拉</h3>
+            <p>本大爷就是塞拉。</p>
+            <span class="box-more">进入</span>
+        </a>
+
+        <a class="box" href="文学.html">
+            <h3>文学（以及拙劣的小说）</h3>
+            <p>“他再也没有写过小说。”</p>
+            <span class="box-more">进入</span>
+        </a>
+
+        <a class="box" href="音乐.html">
+            <h3>音乐（以及视频）</h3>
+            <p>This is TRUE music.</p>
+            <span class="box-more">进入</span>
+        </a>
+
+        <a class="box" href="数学.html">
+            <h3>数学（及与之相关之物）</h3>
+            <p>其实每个人都很擅长数学，只是大家擅长的是不同种类的数学。</p>
+            <span class="box-more">进入</span>
+        </a>
+
+        <a class="box" href="技术.html">
+            <h3>技术（以及实例）</h3>
+            <p>菜菜</p>
+            <span class="box-more">进入</span>
+        </a>
+
+        <a class="box" href="米露.html">
+            <h3>米露</h3>
+            <p>米露很高兴遇见你。</p>
+            <span class="box-more">进入</span>
+        </a>
     </div>
 
-    <h2 class="title" style="display:flex;justify-content:center;">塞拉爱米露的分区</h2>
-    <div style="display:flex;gap:20px;justify-content: center;margin-bottom:20px;">
-        <div style="display: flex;flex-direction:row;justify-content: center;column-gap:20px">
-            <a href="塞拉.html"><div class="box"><h1 style="margin:20px">塞拉</h1>
-            <p style="margin:20px">本大爷就是塞拉。</p></div></a>
-            <a href="文学.html"><div class="box"><h1 style="margin:20px">文学（以及拙劣的小说）</h1>
-            <p style="margin:20px">“他再也没有写过小说。”</p>
-            </div></a>
-            <a href="音乐.html"><div class="box"><h1 style="margin:20px">音乐（以及视频）</h1>
-            <p style="margin:20px">This is TRUE music.</p>
-        </div></a>
-        </div>
-    </div>
+    <script src="鼠标.js"></script>
 
-    <div style="display:flex;gap:20px;justify-content: center;margin-bottom:20px;">
-        <div style="display: flex;flex-direction:row;justify-content: center;column-gap:20px">
-            <a href="数学.html"><div class="box"><h1 style="margin:20px">数学（及与之相关之物）</h1>
-            <p style="margin:20px">其实每个人都很擅长数学，只是大家擅长的是不同种类的数学。</p>
-        </div></a>
-            <a href="技术.html"><div class="box"><h1 style="margin:20px">技术（以及实例）</h1>
-            <p style="margin:20px">菜菜</p></div></a>
-            <a href="米露.html"><div class="box"><h1 style="margin:20px">米露</h1>
-            <p style="margin:20px">米露很高兴遇见你。</p></div></a>
-        </div>
-
-    </div>
-
+    <!-- ✰ webmeji 桌面小宠物（1 只 Miku）✰ -->
+    <link rel="stylesheet" href="webmeji-main/webmeji.css">
+    <script src="webmeji-main/config.js"></script>
+    <script>
+        // 覆盖 config.js 的默认 spawn 配置：只出 1 只 Miku
+        window.SPAWNING = [{ id: 'webmeji-0', config: 'MIKU_CONFIG' }];
+    </script>
+    <script src="webmeji-main/webmeji.js"></script>
 </body>
 
 </html>

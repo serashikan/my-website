@@ -1,11 +1,21 @@
 # CLAUDE.md
 
 本文件为 Claude Code（claude.ai/code）在此仓库中工作时提供指导。
-Claude Code在工作时，对于ai_workspace之外的文件只能读取或者复制，不能做其他操作，有任何需要更改的地方，请复制该文件到ai_workspace里面修改副本，人类会在确认无误后将文件放到应该放到地方。生成的任何新文件也请放到ai_workspace里面。谢谢。
+
+## 文件改动范围
+
+- 对于 `ai_workspace/` 之外的文件，默认只能**读取或复制**。
+- 需要修改时，先把文件复制到 `ai_workspace/` 里改副本；生成的任何新文件也先放进 `ai_workspace/`。
+- **在取得用户明确许可后**，AI 可以把 `ai_workspace/` 里确认无误的改动搬进正式位置
+  （复制到仓库根目录或对应目录），并顺手清理 `ai_workspace/` 里剩下的临时副本与软链接。
+- 未经许可，不要直接改动正式文件。改动说明请写在 `ai_workspace/改动说明.md` 里。
 
 ## 概述
 
-塞拉爱米露的个人网站 — 纯静态个人网站，无构建步骤、无框架、无依赖。直接在浏览器中打开任意 `.html` 文件即可预览。所有 CSS 和 JS 均为内联编写，或以 `<script src="...">` 标签引入。
+塞拉爱米露的个人网站 — 纯静态个人网站，无构建步骤、无框架、无依赖。直接在浏览器中打开任意 `.html` 文件即可预览。
+
+样式分两层：全站共享的 `风格.css`（设计变量、基础排版、导航栏、侧边栏、正文样式），
+加上每个页面 `<head>` 里少量页面专属的 `<style>`。JS 以 `<script src="...">` 引入或内联。
 
 ## 运行 / 开发方式
 
@@ -16,16 +26,20 @@ open index.html
 python3 -m http.server 8080
 ```
 
+注意：`文学/技术/数学.html` 靠 `fetch()` 读取 `txt文件/` 里的内容，
+用 `file://` 直接打开会因跨域限制而加载不出正文，建议用上面的本地服务器预览。
+
 没有 package.json、打包工具、代码检查工具或测试套件。全部为原生 HTML/CSS/JS。
 
 ## 页面结构
 
 | 文件 | 功能 |
 |------|------|
+| `风格.css` | 全站共享样式表 — 设计变量、基础排版、导航栏、侧边栏、正文、卡片 |
 | `index.html` | 着陆页，包含欢迎信息、自定义光标、密码保护烟花按钮 |
 | `主页.html` | 主枢纽页 — 包含指向 6 个子版块的导航卡片 |
 | `文学.html` | 文学版块 — 侧边栏导航通过 `fetch()` 加载 `.txt` 内容 |
-| `技术.html` | 技术版块 — 加载 `.txt` 并通过 ES `import()` 动态导入 `.js` 游戏模块 |
+| `技术.html` | 技术版块 — 加载 `.txt`/`.md`，并通过 ES `import()` 动态导入 `.js` 游戏模块 |
 | `数学.html` | 数学版块 — 加载 `.txt`，并通过 `<embed>` 嵌入 `.pdf` |
 | `音乐.html` | 音乐版块（大部分为占位状态） |
 | `塞拉.html` | 塞拉角色页面（占位状态） |
@@ -33,14 +47,22 @@ python3 -m http.server 8080
 
 ## 子页面的共享模式（`文学/技术/数学/音乐/塞拉/米露.html`）
 
-所有子页面共享相同的布局模式：
-- **顶部导航栏**：`burlywood` 背景色，logo 图片链接回 `主页.html`
-- **侧边栏**（`.sidebar`，200px 宽）：树形菜单，`<ul class="menu">` 内包含可折叠的 `<ul class="sub1">` 子菜单
+所有子页面结构相同，样式全部来自 `风格.css`：
+
+- **顶部导航栏**（`.top-bar`）：`burlywood` 渐变背景，`position: sticky`。
+  logo 包在 `.logo-slot` 里（`overflow: hidden` 裁掉原图四周的透明留白）链接回 `主页.html`
+- **侧边栏**（`.sidebar`，宽度 `--sidebar-w` = 236px，`sticky` 固定在导航栏下方）：
+  树形菜单，`<ul class="menu">` 内包含可折叠的 `<ul class="sub1">` 子菜单
 - **主内容区**（`.main`）：两个内容 div — `#prologue`（默认介绍文字）和 `#txtBox`（点击菜单后加载的动态内容）
 - 内容切换：所有 `.content` div 默认隐藏；添加 `.active` 类即可显示
-- 自定义光标：body 设置 `cursor: none` + 由 `鼠标.js` 定位的 `.mouse` div
+- 自定义光标：`html, body` 设置 `cursor: none` + 由 `鼠标.js` 定位的 `.mouse` div
 
-侧边栏 JS 逻辑在每个页面中以内联形式重复 — 相同模式：查询所有 `<a>` 标签，根据 `data-target` 或 `data-file` 属性切换 `#prologue`/`#txtBox` 的显示。
+侧边栏 JS 逻辑在每个页面中以内联形式重复 — 相同模式：查询所有 `<a>` 标签，
+根据 `data-target` 或 `data-file` 属性切换 `#prologue`/`#txtBox` 的显示，
+并给点击过的条目加 `.current` 类做高亮。
+
+`技术.html` 的点击回调必须是 `async function`（内部用了 `await import()`），
+写成普通函数会是语法错误，导致整个 `<script>` 块失效、菜单全部点不动。
 
 ## JavaScript 模块
 
@@ -54,6 +76,9 @@ python3 -m http.server 8080
 - 密码正确后：隐藏所有页面元素（`.hidden-all`），设置夜空背景，启动基于 Canvas 的烟花动画（火箭升空 + 粒子爆炸），播放背景音乐
 - 按 `B` 键退出烟花模式并恢复页面
 - 烟花系统使用 `Rocket` 和 `Particle` 类，通过 `requestAnimationFrame` 循环驱动
+- **退出时不再写回硬编码的行内样式**：进入烟花模式会给 `<body>` 加若干行内样式，
+  退出时按 `fireInlineProps` 列表逐条 `removeProperty`，把版式交还给 `风格.css`。
+  **改首页版式不需要动这个文件。**
 
 ### `game-breakout.js` — 打砖块游戏（ES 模块）
 - 导出 `init(container)`、`start()`、`stop()`
@@ -67,16 +92,31 @@ python3 -m http.server 8080
 - **`图片/`** — 所有图片资源（网站图标、logo、角色图、光标图）。许多资源同时存在 `.png` 和 `.webp` 两种格式。
 - **`音频文件/`** — 音频文件（目前为 `爆弾.m4a`，烟花模式使用）
 - **`字体/`** — 自定义字体（`破晓像素.ttf` 像素字体，`源古宋體-F.ttf`）
-- **`ai_workspace/`** — 空目录（已纳入 git 跟踪，可能用于 AI 生成内容）
+- **`ai_workspace/`** — AI 工作区：改动的副本、新文件、改动说明都先放这里，得到用户许可后再搬到正式位置
 
-## 常用 CSS 规范
+## 样式架构（`风格.css`）
 
-- `.top-bar`：全宽导航栏（高 100px，`burlywood` 背景色）
-- `.mouse`：固定定位的光标替代（50×50px，z-index 9999，pointer-events none）
-- `.box`：卡片式容器（400×200px，白色半透明，圆角，悬停上浮效果）
-- `.sidebar` + `.main` + `.wrap`：flexbox 侧边栏布局（200px 侧边栏，flex-1 主区域）
-- 配色：暖色调 — `linen` 背景，`burlywood` 导航栏，`#FF8FB1` 粉色边框，粉彩色渐变
-- 自定义字体 `破晓像素` 通过 `@font-face` 从 `字体/破晓像素.ttf` 加载
+**所有配色 / 圆角 / 阴影 / 尺寸都收在文件顶部的 `:root` 变量里，改那一段就能全站换风格。**
+
+- `--linen` / `--paper` / `--surface`：纸面底色与卡片纸白
+- `--brand*`：焦糖色系（`--brand` 就是原来的 `burlywood`）
+- `--accent*`：强调粉（沿用原来的 `#FF8FB1` 一脉）
+- `--ink` / `--ink-2` / `--ink-3`：暖褐墨色，代替纯黑
+- `--sh-1/2/3`：三级暖色投影（用 `rgba(122,94,62,…)` 而不是灰黑）
+- `--topbar-h`、`--sidebar-w`、`--logo-img`：导航栏高度、侧边栏宽度、logo 尺寸
+- `--font-ui` / `--font-serif` / `--font-pixel`：正文字体、宋体（长文阅读）、`破晓像素`
+
+关键选择器：
+
+- `.top-bar` / `.logo-slot` / `.logo`：导航栏与 logo（logo 原图是 2048² 的方形，
+  文字只占中间 569px 高，靠透明留白撑版面，所以要用 `.logo-slot` 裁切）
+- `.sidebar` + `.main` + `.wrap`：flexbox 布局；`.wrap::before` 单独画贯穿到底的分隔线
+- `.menu` / `.sub1`：树形菜单，`.current` 为当前条目；带子菜单的项用 `:has(> .sub1)` 画箭头
+- `.hidden-all`：烟花模式的隐藏规则，配合 `花火.js`
+- `#txtBox`：正文。**`.txt` 是纯文本，必须用 `white-space: pre-wrap` 保留换行**，
+  否则整篇小说会被压成一整段；Markdown 走 `innerHTML`，所以要加 `.md` 类切回 `normal`
+- `#prologue`：前言便签卡
+- 窄屏（`max-width: 820px`）：侧边栏改为上下堆叠，导航栏与 logo 同步缩小
 
 ## Git 说明
 

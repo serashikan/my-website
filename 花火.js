@@ -1,17 +1,18 @@
-const originBodyStyle = {
-    margin: "0",
-  minHeight: "100vh",
-  background: "linear-gradient(45deg, #ffeede, #ffe6dd, #ffe0d2, #fff0e8, #ffe8df)",
-  backgroundSize: "400% 400%",
-  cursor: "none",
-  display: "flex",
-  flexDirection: "column",
-  padding: "0px 0 500px",
-  gap: "10px",
-  width:"",
-  height:"",
-  overflowY:""
-};
+// 进入烟花模式时，下面这些行内样式会被写到 <body> 上。
+// 退出时逐条 removeProperty，把版式交还给 风格.css —— 
+// 这样首页美术风格怎么改，这里都不用跟着改。
+const fireInlineProps = [
+  "background",
+  "background-size",
+  "background-position",
+  "background-repeat",
+  "width",
+  "height",
+  "margin",
+  "padding",
+  "overflow-y",
+  "z-index"
+];
 
 let bgAudio = new Audio("音频文件/爆弾.m4a");
 bgAudio.loop = true;
@@ -225,7 +226,8 @@ btn.addEventListener('click', function() {
 document.addEventListener('keyup',function(e){
     if (e.key == 'b'){
         document.body.classList.remove('hidden-all');
-        Object.assign(document.body.style, originBodyStyle);
+        // 撤掉烟花模式留下的行内样式，让外部样式表重新接管
+        fireInlineProps.forEach(p => document.body.style.removeProperty(p));
         stopFireworks();
         bgAudio.pause();
         bgAudio.currentTime = 0;
