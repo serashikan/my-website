@@ -9,6 +9,10 @@
     <link rel="icon" href="图片/favicon.png" type="image/png">
     <!-- 全站共享样式 -->
     <link rel="stylesheet" href="风格.css">
+
+    <!-- 本地内置，离线 / file:// 双击都能用 -->
+    <script src="lib/marked.min.js"></script>
+    <script src="站点内容.js"></script>
 </head>
 
 <body>
@@ -46,6 +50,27 @@
                 <li>
                     <a data-file="txt文件/文哲思考.txt">文学思考</a>
                 </li>
+                <!-- 原本在「技术」版块，2026-09 搬到这里（小说本来就更该归文学） -->
+                <li>
+                    <a data-file="txt文件/小说辅助器.md">小说辅助器</a>
+                    <ul class="sub1">
+                        <li><a data-file="txt文件/蓝色的宝石和黑色的恶魔/第1章_上锁的天台.md">第1章 上锁的天台</a></li>
+                        <li><a data-file="txt文件/蓝色的宝石和黑色的恶魔/第2章_宝石猎人.md">第2章 宝石猎人</a></li>
+                        <li><a data-file="txt文件/蓝色的宝石和黑色的恶魔/第3章_恶魔的提案.md">第3章 恶魔的提案</a></li>
+                        <li><a data-file="txt文件/蓝色的宝石和黑色的恶魔/第4章_千分之一的交易.md">第4章 千分之一的交易</a></li>
+                        <li><a data-file="txt文件/蓝色的宝石和黑色的恶魔/第5章_第一颗石头.md">第5章 第一颗石头</a></li>
+                        <li><a data-file="txt文件/蓝色的宝石和黑色的恶魔/第6章_夜市.md">第6章 夜市</a></li>
+                    </ul>
+                </li>
+                <!-- 梅血饅頭：LaTeX 排版的短篇，直接嵌 PDF（每篇的名字就是它所在子文件夹的名字） -->
+                <li>
+                    <a>梅血饅頭</a>
+                    <ul class="sub1">
+                        <li><a data-file="txt文件/向梅菲斯特小姐的忏悔_副本/番茄牛肉火锅/番茄牛肉火锅.pdf">番茄牛肉火锅</a></li>
+                        <li><a data-file="txt文件/向梅菲斯特小姐的忏悔_副本/我想活出怎样的人生/我想活出怎样的人生.pdf">我想活出怎样的人生</a></li>
+                        <li><a data-file="txt文件/向梅菲斯特小姐的忏悔_副本/小菲/小菲.pdf">小菲</a></li>
+                    </ul>
+                </li>
             </ul>
         </aside>
 
@@ -66,7 +91,7 @@
 
         // 3. 给每个菜单加点击
         links.forEach(link => {
-            link.onclick = function () {
+            link.onclick = async function () {
 
                 // ======================
                 // 第一步：全部隐藏
@@ -89,13 +114,36 @@
                 if (this.dataset.file) {
                     let filePath = this.dataset.file;
                     let ext = filePath.split('.').pop().toLowerCase();
-                    if (ext === 'txt') {
-                        fetch(filePath)
-                            .then(res => res.text())
-                            .then(text => {
-                                txtBox.innerText = text;        // 把文本放进去
-                                txtBox.classList.add("active"); // 显示盒子
-                            });
+
+                    if (ext === 'pdf') {
+                        // PDF 直接交给浏览器自带的阅读器，不走 fetch，
+                        // 所以双击（file://）打开也能看。
+                        // 用 createElement 赋值 src，中文路径由浏览器自己转义。
+                        txtBox.innerHTML = '';
+                        const view = document.createElement('embed');
+                        view.className = 'pdf-view';
+                        view.type = 'application/pdf';
+                        view.src = filePath;
+                        txtBox.appendChild(view);
+                        txtBox.classList.add("active");
+                        txtBox.classList.remove("md");
+                    } else try {
+                        // SiteContent.load：先 fetch 拿最新内容；
+                        // 用 file:// 双击打开时 fetch 会被 CORS 拦掉，
+                        // 它会自动退回 站点内容.js 里的快照。
+                        const text = await SiteContent.load(filePath);
+
+                        if (ext === 'md' && typeof marked !== 'undefined') {
+                            txtBox.innerHTML = marked.parse(text);
+                            txtBox.classList.add("md");     // 交给 Markdown 排版
+                        } else {
+                            txtBox.innerText = text;        // 纯文本
+                        }
+                        txtBox.classList.add("active");
+                    } catch (err) {
+                        txtBox.innerText = '加载失败：' + err.message;
+                        txtBox.classList.add("active");
+                        console.error(err);
                     }
                 }
 

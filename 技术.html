@@ -7,9 +7,12 @@
     <meta name="author" content="selmuel">
     <title>技术 · 塞拉爱米露的个人网站</title>
     <link rel="icon" href="图片/favicon.png" type="image/png">
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <!-- 全站共享样式 -->
     <link rel="stylesheet" href="风格.css">
+
+    <!-- 本地内置，离线 / file:// 双击都能用 -->
+    <script src="lib/marked.min.js"></script>
+    <script src="站点内容.js"></script>
 </head>
 
 <body>
@@ -29,17 +32,7 @@
                 <li>
                     <a data-target="prologue">前言</a>
                 </li>
-                <li>
-                    <a data-file="txt文件/小说辅助器.md">小说辅助器</a>
-                    <ul class="sub1">
-                        <li><a data-file="txt文件/蓝色的宝石和黑色的恶魔/第1章_上锁的天台.md">第1章 上锁的天台</a></li>
-                        <li><a data-file="txt文件/蓝色的宝石和黑色的恶魔/第2章_宝石猎人.md">第2章 宝石猎人</a></li>
-                        <li><a data-file="txt文件/蓝色的宝石和黑色的恶魔/第3章_恶魔的提案.md">第3章 恶魔的提案</a></li>
-                        <li><a data-file="txt文件/蓝色的宝石和黑色的恶魔/第4章_千分之一的交易.md">第4章 千分之一的交易</a></li>
-                        <li><a data-file="txt文件/蓝色的宝石和黑色的恶魔/第5章_第一颗石头.md">第5章 第一颗石头</a></li>
-                        <li><a data-file="txt文件/蓝色的宝石和黑色的恶魔/第6章_夜市.md">第6章 夜市</a></li>
-                    </ul>
-                </li>
+                <!-- 原「小说辅助器」整块已搬到 文学.html（小说归文学版块） -->
                 <li>
                     <a>小游戏</a>
                     <ul class="sub1">
@@ -120,36 +113,26 @@
                 if (this.dataset.file) {
                     let filePath = this.dataset.file;
                     let ext = filePath.split('.').pop().toLowerCase();
-                    if (ext === 'txt') {
-                        fetch(filePath)
-                            .then(res => res.text())
-                            .then(text => {
-                                txtBox.innerText = text;        // 把文本放进去
-                                txtBox.classList.add("active"); // 显示盒子
-                            });
-                    }
 
-                    if (ext === 'md') {
-                        fetch(filePath)
-                            .then(res => {
-                                if (!res.ok) throw new Error(`文件加载失败: ${res.status}`);
-                                return res.text();
-                            })
-                            .then(text => {
-                                if (typeof marked !== 'undefined') {
-                                    txtBox.innerHTML = marked.parse(text); // 把 md 编译成 HTML
-                                    txtBox.classList.add("md");            // 交给 Markdown 排版
-                                } else {
-                                    txtBox.innerText = text;               // marked 未加载时，至少显示原文
-                                    console.warn('marked.js 未加载，显示原始md文本');
-                                }
-                                txtBox.classList.add("active");
-                            })
-                            .catch(err => {
-                                txtBox.innerText = '加载失败: ' + err.message;
-                                txtBox.classList.add("active");
-                                console.error(err);
-                            });
+                    if (ext === 'txt' || ext === 'md') {
+                        try {
+                            // SiteContent.load：先 fetch 拿最新内容；
+                            // 用 file:// 双击打开时 fetch 会被 CORS 拦掉，
+                            // 它会自动退回 站点内容.js 里的快照。
+                            const text = await SiteContent.load(filePath);
+
+                            if (ext === 'md' && typeof marked !== 'undefined') {
+                                txtBox.innerHTML = marked.parse(text); // 把 md 编译成 HTML
+                                txtBox.classList.add("md");            // 交给 Markdown 排版
+                            } else {
+                                txtBox.innerText = text;              // 纯文本
+                            }
+                            txtBox.classList.add("active");
+                        } catch (err) {
+                            txtBox.innerText = '加载失败：' + err.message;
+                            txtBox.classList.add("active");
+                            console.error(err);
+                        }
                     }
 
                     if (ext === 'js') {

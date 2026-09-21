@@ -9,6 +9,9 @@
     <link rel="icon" href="图片/favicon.png" type="image/png">
     <!-- 全站共享样式 -->
     <link rel="stylesheet" href="风格.css">
+
+    <!-- 本地内置，离线 / file:// 双击都能用 -->
+    <script src="站点内容.js"></script>
 </head>
 
 <body>
@@ -52,7 +55,7 @@
 
         // 3. 给每个菜单加点击
         links.forEach(link => {
-            link.onclick = function () {
+            link.onclick = async function () {
 
                 // ======================
                 // 第一步：全部隐藏
@@ -76,12 +79,17 @@
                     let filePath = this.dataset.file;
                     let ext = filePath.split('.').pop().toLowerCase();
                     if (ext === 'txt') {
-                        fetch(filePath)
-                            .then(res => res.text())
-                            .then(text => {
-                                txtBox.innerText = text;        // 把文本放进去
-                                txtBox.classList.add("active"); // 显示盒子
-                            });
+                        try {
+                            // SiteContent.load：先 fetch 拿最新内容；
+                            // file:// 双击打开时 fetch 会被 CORS 拦掉，
+                            // 它会自动退回 站点内容.js 里的快照。
+                            txtBox.innerText = await SiteContent.load(filePath);
+                            txtBox.classList.add("active");
+                        } catch (err) {
+                            txtBox.innerText = '加载失败：' + err.message;
+                            txtBox.classList.add("active");
+                            console.error(err);
+                        }
                     }
 
                     if (ext === 'pdf') {

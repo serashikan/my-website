@@ -425,6 +425,13 @@ hr {
   background: var(--paper);
   border: 1px solid var(--line);
 }
+/* PDF 阅读器（文学「梅血饅頭」里的 <embed>）：给一个够高的容器 */
+#txtBox embed.pdf-view {
+  width: 100%;
+  height: clamp(460px, 76vh, 920px);
+  border: 1px solid var(--line);
+  background: var(--paper);
+}
 
 /* Markdown（技术页的 .md）渲染出来是 HTML，不能再用 pre-wrap */
 #txtBox.md { max-width: 76ch; white-space: normal; }
