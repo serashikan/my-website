@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>十点半 · 预览</title>
+    <!-- 样式已并入 风格.css、脚本已搬到仓库根目录，这里直接引正式文件 -->
+    <link rel="stylesheet" href="../风格.css">
+    <style>
+        /* 预览页不需要自定义光标，看得清楚更要紧 */
+        html, body { cursor: auto; }
+    </style>
+    <style>
+        /* 测试页专用：关掉入场淡入，截图才不会被动画中间帧骗到 */
+        .content.active, .sub1.active { animation: none !important; }
+    </style>
+</head>
+
+<body>
+    <div class="mouse"></div>
+
+    <div class="top-bar">
+        <a class="logo-slot" href="../主页.html" aria-label="回到主页">
+            <img class="logo" src="../图片/文字logo去白.webp" alt="sera&amp;milu">
+        </a>
+    </div>
+
+    <div class="wrap">
+        <aside class="sidebar">
+            <p class="side-title">目录</p>
+            <ul class="menu">
+                <li><a data-target="prologue">前言</a></li>
+                <li>
+                    <a>小游戏</a>
+                    <ul class="sub1 active">
+                        <li><a data-file="game-breakout.js">打砖块</a></li>
+                        <li><a data-file="game-hanauta.js">花瓣占卜</a></li>
+                        <li><a data-file="game-codon.js">密码子作曲器</a></li>
+                        <li><a data-file="game-yacht.js">快艇骰子</a></li>
+                        <li><a class="current" data-file="game-shidianban.js">十点半</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </aside>
+
+        <main class="main">
+            <div id="prologue" class="content"></div>
+            <div id="txtBox" class="content active"></div>
+        </main>
+    </div>
+
+    <script>
+        // 测试驱动：把 Math.random 换成固定种子的伪随机，截图才可复现
+        const qs = new URLSearchParams(location.search);
+        let seed = Number(qs.get('seed') || 20261006) || 1;
+        Math.random = () => { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; };
+        window.__errors = [];
+        window.addEventListener('error', e => window.__errors.push('error: ' + e.message));
+        window.addEventListener('unhandledrejection', e => window.__errors.push('reject: ' + e.reason));
+    </script>
+    <script src="../game-shidianban.js"></script>
+    <script>
+        const step = qs.get('step') || '1';
+        const box = document.getElementById('txtBox');
+        const game = Object.values(window.SiteGames).pop();
+        game.init(box);
+        game.start();
+
+        const click = (sel) => {
+            const b = box.querySelector(sel);
+            if (b && !b.disabled && !b.hidden) { b.click(); return true; }
+            return false;
+        };
+        const plan = {
+            '1': [],
+            '2': [[0, '.tenhalf-next']],
+            '3': [[0, '.tenhalf-next'], [300, '.tenhalf-hit'], [900, '.tenhalf-hit']],
+            '4': [[0, '.tenhalf-next'], [300, '.tenhalf-hit'], [900, '.tenhalf-stand']],
+            '5': [[0, '.tenhalf-next'], [300, '.tenhalf-hit'], [900, '.tenhalf-hit'], [1500, '.tenhalf-hit'], [2100, '.tenhalf-hit']],
+            '6': [[0, '.tenhalf-mode'], [200, '.tenhalf-next'], [500, '.tenhalf-stand']],
+            '7': [[0, '.tenhalf-next'], [300, '.tenhalf-stand']],
+            // 双人同屏打完一整局：玩家一停牌 → 玩家二停牌 → 开牌
+            '8': [[0, '.tenhalf-mode'], [200, '.tenhalf-next'], [500, '.tenhalf-stand'], [900, '.tenhalf-stand']],
+            // 开牌后点「下一局」，看能不能回到下注阶段
+            '9': [[0, '.tenhalf-next'], [300, '.tenhalf-stand'], [2200, '.tenhalf-next'], [2600, '.tenhalf-next']],
+            // 一路要满 5 张，看五小 / 爆牌那条线
+            '10': [[0, '.tenhalf-next'], [300, '.tenhalf-hit'], [900, '.tenhalf-hit'], [1500, '.tenhalf-hit'], [2100, '.tenhalf-hit']],
+            // 要满 5 张再停牌，看五小 / 人五小的结算
+            '11': [[0, '.tenhalf-next'], [300, '.tenhalf-hit'], [900, '.tenhalf-hit'], [1500, '.tenhalf-hit'], [2100, '.tenhalf-hit'], [2700, '.tenhalf-stand']],
+            // 高注额连打 10 局：看双方筹码来回走、见底补满、庄家赔光封顶
+            '20': (() => {
+                const seq = [[0, '.tenhalf-chip[data-bet="25"]'], [200, '.tenhalf-next'], [500, '.tenhalf-stand']];
+                let t = 3600;
+                for (let i = 0; i < 9; i++) {
+                    seq.push([t, '.tenhalf-next']);        // 开牌后 → 回到下注
+                    seq.push([t + 200, '.tenhalf-next']);  // 下注 → 开局
+                    seq.push([t + 500, '.tenhalf-stand']); // 立刻停牌，交给庄家
+                    t += 3600;
+                }
+                return seq;
+            })()
+        }[step] || [];
+        plan.forEach(([t, sel]) => setTimeout(() => click(sel), t));
+
+        // 按钮有没有掉出首屏要量，不要靠截图猜
+        setTimeout(() => {
+            const rect = (sel) => {
+                const el = box.querySelector(sel);
+                if (!el) return null;
+                const b = el.getBoundingClientRect();
+                return {
+                    bottom: Math.round(b.bottom),
+                    inView: b.bottom <= window.innerHeight && b.top >= 0,
+                    hidden: !!el.hidden,
+                    disabled: !!el.disabled
+                };
+            };
+            const probe = JSON.stringify({
+                step,
+                errors: window.__errors,
+                vh: window.innerHeight,
+                hit: rect('.tenhalf-hit'),
+                stand: rect('.tenhalf-stand'),
+                next: rect('.tenhalf-next'),
+                status: (box.querySelector('.tenhalf-status') || {}).textContent || '',
+                players: (box.querySelector('.tenhalf-players') || {}).textContent || '',
+                bank: (box.querySelector('.tenhalf-bank') || {}).textContent || '',
+                chips: Array.from(box.querySelectorAll('.tenhalf-chip')).map(b => b.textContent + (b.disabled ? ':off' : ':on')).join(' '),
+                cards: box.querySelectorAll('.tenhalf-card').length
+            });
+            document.title = 'PROBE ' + probe;
+            const pre = document.createElement('pre');
+            pre.id = '__probe';
+            pre.style.display = 'none';
+            pre.textContent = 'PROBE ' + probe;
+            document.body.appendChild(pre);
+        }, step === '20' ? 40000 : 4200);
+    </script>
+</body>
+
+</html>

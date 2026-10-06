@@ -50,7 +50,7 @@ python3 -m http.server 8080
 | `index.html` | 着陆页，包含欢迎信息、自定义光标、密码保护烟花按钮 |
 | `主页.html` | 主枢纽页 — 包含指向 6 个子版块的导航卡片 |
 | `文学.html` | 文学版块 — 加载 `.txt`/`.md`/`.pdf`；含《蓝色的宝石和黑色的恶魔》和「梅血饅頭」短篇集 |
-| `技术.html` | 技术版块 — 加载 `.txt`/`.md`，并通过注入 `<script>` 动态加载 `.js` 小游戏（打砖块、花瓣占卜） |
+| `技术.html` | 技术版块 — 加载 `.txt`/`.md`，并通过注入 `<script>` 动态加载 `.js` 小游戏（打砖块、花瓣占卜、密码子作曲器、快艇骰子、十点半） |
 | `数学.html` | 数学版块 — 加载 `.txt`，并通过 `<embed>` 嵌入 `.pdf` |
 | `音乐.html` | 音乐版块（大部分为占位状态） |
 | `塞拉.html` | 塞拉角色页面（占位状态） |
@@ -184,6 +184,26 @@ python3 -m http.server 8080
 - 光照以环境光为主（Hemisphere 2.0 + 平行光 0.85）：
   平行光一强，平坦花瓣就每个面一块死高光，立刻变「低多边形折纸」
 
+### `game-shidianban.js` — 十点半（普通脚本）
+
+- 同样注册到 `window.SiteGames`，接口一致（`init` / `start` / `stop`）；牌面是纯 CSS 画的，不依赖图片
+- **规则全在文件顶部的 `CFG` 里**：`bets` 注额、`dealerHitBelow` 庄家要牌线、
+  `dealerWinsTie` 平局算不算庄家赢、`maxCards` 张数上限、`payouts` 各牌型净赔率。
+  改规则只动这一段，别去翻下面的流程代码
+- **点数一律用「半点」为单位的整数存**（A = 2、2–10 = 2×面值、J/Q/K 和大小王 = 1）。
+  用 0.5 的浮点数反复累加会飘，比较大小和判断 10.5 就不准了；展示时再 `/2`
+- 牌型等级见 `typeOf()`：`0 爆牌 < 1 普通点数 < 2 十点半 < 3 五小 < 4 人五小`
+  （人五小 = 5 张全是 J/Q/K）
+- 模式：`mode = 'dealer'`（和电脑庄家打，有筹码下注）/ `'duo'`（双人同屏，轮流要牌比大小）
+- **筹码是真的在两边走的**：`chips`（你）和 `dealerChips`（庄家）各 100 起，
+  赢的钱从庄家出、输的钱进庄家口袋。三条边界都在 `newRound()` / `settleDealer()` 里：
+  ① 庄家赔不起时 `Math.min(want, dealerChips)` 封顶赔付；
+  ② 谁筹码低于最小注额，下一局自动补满 `startChips`；
+  ③ 买不起的注额按钮直接禁用，`affordableBet()` 会把当前注额压回买得起的最大一档
+  （不然会出现「3 个筹码下 25」把余额下成负数）
+- 庄家要牌、爆牌后自动停手都走 `schedule()`；**`stop()` 会 `clearTimers()` 并置 `disposed`**，
+  切走菜单后不会有定时器继续跑（`技术.html` 切换时先 `stop()` 再清空 `#txtBox`）
+
 ## 内容目录
 
 - **`txt文件/`** — 正文内容和 PDF，是**唯一的内容源头**。`.txt` / `.md` 由 `SiteContent.load()` 读取；`.pdf` 以 embed 方式嵌入。命名体现归属（如 `魔法_前言.txt`）。
@@ -227,6 +247,8 @@ python3 -m http.server 8080
 - `.hanauta` / `.hanauta-call` / `.hanauta-reset`：花瓣占卜的按钮与排版。
   `.is-like` 粉色、`.is-dislike` 蓝色、`.is-done` 是出结果后的状态
 - `.hanauta-styles` / `.hanauta-style`：花的样子切换胶囊按钮，`.is-active` 为选中态
+- `.tenhalf-*`：十点半（牌面是纯 CSS 画的 `.tenhalf-card`，牌背用斜条纹；
+  `.is-hot` 是刚好 10.5、`.is-bust` 是爆牌；窄屏 520px 以下牌桌改单列）
 - 窄屏（`max-width: 820px`）：侧边栏改为上下堆叠，导航栏与 logo 同步缩小
 
 ## 调参时最容易踩的五个坑

@@ -908,3 +908,161 @@ hr {
     transition-duration: .001ms !important;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   13. 十点半（小游戏，脚本是 game-shidianban.js）
+   类名统一 tenhalf- 前缀，和 yacht- / hanauta- / codon- 不撞车
+   --------------------------------------------------------------------------- */
+
+/* #txtBox 是 white-space: pre-wrap（为了 .txt 保留换行），
+   注入的模板 HTML 里的换行 + 缩进会被当成真实空行渲染，所以这里重置回来。 */
+#txtBox .tenhalf { white-space: normal; }
+
+.tenhalf {
+  max-width: 900px;
+  padding: 18px;
+  color: var(--ink);
+  background: linear-gradient(145deg, rgba(255,255,255,.94), rgba(252,240,246,.9));
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  box-shadow: var(--sh-2);
+}
+.tenhalf h2 { margin: 0 0 4px; font-weight: 500; }
+.tenhalf h3 { margin: 0 0 6px; font-size: 15px; font-weight: 500; color: var(--ink-2); }
+.tenhalf h3 em { font-style: normal; color: var(--accent-deep); }
+.tenhalf button { font: inherit; cursor: pointer; }
+.tenhalf button:disabled { opacity: .42; cursor: default; }
+
+.tenhalf-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.tenhalf-head p { margin: 0; color: var(--ink-2); }
+.tenhalf-head-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+
+.tenhalf-head-actions button,
+.tenhalf-actions button,
+.tenhalf-chip {
+  padding: 9px 15px;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  transition: background .2s var(--ease), border-color .2s var(--ease), transform .2s var(--ease);
+}
+.tenhalf-head-actions button:hover,
+.tenhalf-actions button:hover:not(:disabled),
+.tenhalf-chip:hover:not(:disabled) {
+  background: var(--brand-tint);
+  border-color: var(--brand-light);
+}
+/* 双人同屏 / 选中的注额，都用强调粉标出来 */
+.tenhalf-mode.is-on,
+.tenhalf-chip.is-on {
+  color: #fff;
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.tenhalf-players { display: flex; gap: 12px; margin: 10px 0 8px; }
+.tenhalf-player {
+  flex: 1;
+  padding: 8px 13px;
+  background: rgba(255,255,255,.58);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+.tenhalf-player.active { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(140,75,119,.12); }
+.tenhalf-player b { display: block; color: var(--ink-2); }
+.tenhalf-player strong { display: block; margin-top: 1px; font-size: 19px; font-weight: 600; }
+.tenhalf-player small { color: var(--ink-3); font-size: 11px; }
+
+.tenhalf-bet {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0 0 4px;
+  padding: 7px 12px;
+  background: rgba(255,255,255,.55);
+  border-radius: 16px;
+}
+.tenhalf-bet[hidden] { display: none; }
+.tenhalf-bet-label { color: var(--ink-2); font-size: 13px; letter-spacing: .06em; }
+.tenhalf-chips { display: flex; gap: 8px; }
+.tenhalf-chip {
+  min-width: 52px;
+  padding: 7px 13px;
+  color: var(--accent-deep);
+  font-weight: 600;
+}
+.tenhalf-bank { margin-left: auto; color: var(--ink-2); font-size: 13px; }
+.tenhalf-bank b { color: var(--ink); font-size: 15px; }
+
+.tenhalf-table { display: flex; gap: 14px; margin: 10px 0 2px; }
+.tenhalf-hand {
+  flex: 1;
+  min-height: 100px;
+  padding: 10px 13px;
+  background: rgba(255,255,255,.45);
+  border: 1px solid var(--line-2);
+  border-radius: 16px;
+}
+.tenhalf-hand.is-hot { border-color: var(--accent); background: var(--accent-soft); }
+.tenhalf-hand.is-bust { border-color: #d9a08b; background: #fbeee7; }
+.tenhalf-cards { display: flex; flex-wrap: wrap; gap: 8px; }
+.tenhalf-empty { color: var(--ink-3); font-size: 13px; }
+
+.tenhalf-card {
+  display: flex;
+  width: 54px;
+  height: 74px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: var(--sh-1);
+}
+.tenhalf-card .r { font-size: 20px; line-height: 1.1; font-weight: 600; }
+.tenhalf-card .s { font-size: 15px; line-height: 1.2; }
+.tenhalf-card.is-red { color: #c0504a; }
+.tenhalf-card.is-joker .r { font-size: 14px; }
+.tenhalf-card.is-back {
+  background: repeating-linear-gradient(135deg, #ffd9e6 0 8px, #ffb6cd 8px 16px);
+  border-color: var(--accent);
+}
+.tenhalf-card.is-back::after { content: '✦'; color: #fff; font-size: 18px; }
+
+.tenhalf-status { margin: 8px 0 2px; color: var(--ink-2); font-size: 13px; min-height: 19px; }
+/* 赢 / 输 / 和 各一个颜色，扫一眼就知道这局什么结果 */
+.tenhalf-status.is-win { color: var(--accent-deep); }
+.tenhalf-status.is-lose { color: #b0604f; }
+.tenhalf-status.is-tie { color: var(--brand-dark); }
+.tenhalf-actions { display: flex; gap: 10px; flex-wrap: wrap; margin: 8px 0 0; }
+.tenhalf-hit { color: #fff !important; background: var(--accent) !important; border-color: var(--accent) !important; }
+.tenhalf-hit:hover:not(:disabled) { background: var(--accent-deep) !important; border-color: var(--accent-deep) !important; }
+.tenhalf-next { margin-left: auto; }
+
+/* 即使没内容也占一行高，避免提示出现时把按钮顶下去 */
+.tenhalf-tip { margin: 8px 0 0; color: var(--accent-deep); font-size: 12px; min-height: 17px; }
+
+.tenhalf-log { margin-top: 16px; padding-top: 12px; border-top: 1px dashed var(--line); }
+.tenhalf-log p { margin: 4px 0; color: var(--ink-2); font-size: 12px; }
+.tenhalf-log p:first-child { color: var(--ink); }
+.tenhalf-log-empty { color: var(--ink-3); }
+
+.tenhalf-rules { margin-top: 18px; }
+.tenhalf-rules summary { color: var(--ink); cursor: pointer; font-weight: 600; }
+.tenhalf-rules ul { margin: 10px 0 0; padding-left: 20px; }
+.tenhalf-rules li { margin: 5px 0; color: var(--ink-2); font-size: 13px; line-height: 1.7; }
+.tenhalf-rules b { color: var(--ink); }
+
+@media (max-width: 520px) {
+  .tenhalf { padding: 20px; }
+  .tenhalf-head { flex-direction: column; }
+  .tenhalf-table { flex-direction: column; }
+  .tenhalf-card { width: 48px; height: 66px; }
+  .tenhalf-card .r { font-size: 17px; }
+  .tenhalf-card .s { font-size: 13px; }
+  .tenhalf-next { margin-left: 0; }
+}
