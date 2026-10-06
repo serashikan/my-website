@@ -37,6 +37,13 @@
                         <li><a data-file="txt文件/狭义相对论.pdf">狭义相对论</a></li>
                     </ul>
                 </li>
+                <!-- 数学建模：LaTeX 排版的长文，直接嵌 PDF（每篇一个子文件夹） -->
+                <li>
+                    <a>数学建模</a>
+                    <ul class="sub1">
+                        <li><a data-file="txt文件/PageRank算法小引/PageRank算法小引.pdf">PageRank 算法小引</a></li>
+                    </ul>
+                </li>
             </ul>
         </aside>
 
@@ -93,7 +100,15 @@
                     }
 
                     if (ext === 'pdf') {
-                        txtBox.innerHTML = `<embed src="${filePath}" width="100%" height="650px">`;
+                        // PDF 直接交给浏览器自带的阅读器，不走 fetch，
+                        // 所以双击（file://）打开也能看。
+                        // 用 createElement 赋值 src，中文路径由浏览器自己转义。
+                        txtBox.innerHTML = '';
+                        const view = document.createElement('embed');
+                        view.className = 'pdf-view';
+                        view.type = 'application/pdf';
+                        view.src = filePath;
+                        txtBox.appendChild(view);
                         txtBox.classList.add("active");
                     }
                 }
