@@ -1,0 +1,434 @@
+% !TEX program = xelatex
+% ---------------------------------------------------------------------------
+% 摘麦穗与 37% —— 秘书问题与最优停止
+% 编译：xelatex "摘麦穗与37%.tex" （跑两遍）
+% ---------------------------------------------------------------------------
+\documentclass[UTF8,11pt,fontset=macnew]{ctexart}
+
+\usepackage[a4paper,margin=2.4cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,calc}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage[most]{tcolorbox}
+\usepackage{hyperref}
+
+\definecolor{caramel}{HTML}{A9713C}
+\definecolor{rosec}{HTML}{D8678F}
+\definecolor{paper}{HTML}{FBF4EA}
+\definecolor{inkc}{HTML}{3B2E24}
+
+\hypersetup{colorlinks=true,linkcolor=caramel,urlcolor=rosec,
+            pdftitle={摘麦穗与 37\%：秘书问题与最优停止},pdfauthor={米露}}
+
+\linespread{1.13}
+\setlength{\parskip}{0.35em}
+\setlist{itemsep=0.15em,topsep=0.3em}
+
+\newtcolorbox{keybox}[1][小结]{breakable,enhanced,colback=paper,colframe=caramel,
+  boxrule=0.7pt,arc=1.5mm,left=3mm,right=3mm,top=2mm,bottom=2mm,
+  title={\bfseries #1},coltitle=white,colbacktitle=caramel,fonttitle=\bfseries}
+
+\newtcolorbox{warnbox}[1][注意]{breakable,enhanced,colback=rosec!6,colframe=rosec,
+  boxrule=0.7pt,arc=1.5mm,left=3mm,right=3mm,top=2mm,bottom=2mm,
+  title={\bfseries #1},coltitle=white,colbacktitle=rosec,fonttitle=\bfseries}
+
+\title{\bfseries 摘麦穗与 37\%\\[0.35em]
+  \large 秘书问题，和一条"看过三成再决定"的法则}
+\author{米露的读书笔记}
+\date{2026 年 10 月}
+
+\begin{document}
+\maketitle
+\pagestyle{plain}
+\thispagestyle{empty}
+
+\begin{keybox}[这篇文章想做的事]
+传说苏格拉底让柏拉图走过一片麦田，不许回头，只许摘一株麦穗，
+要摘最大的那一株。柏拉图空着手走了出来。
+
+这个故事的流行版本是一碗励志鸡汤，但它问的其实是一个可以严格数学化的问题：
+\textbf{在只能向前走、摘了就不能反悔的前提下，怎样才能最大概率摘到最大的那一株？}
+答案是一个很漂亮的数——先扔掉前 $37\%$ 的机会用来校准标准，
+之后遇到比前面都好的就摘。成功率约 $1/e\approx36.8\%$。
+
+这篇文章把它一步步算出来：为什么最优策略长成"观察 + 收割"两段式，
+为什么分界点是 $1/e$，以及这个结论在什么条件下才成立。
+（本文由大肥鱼写作）
+\end{keybox}
+
+\section{麦田里的那条路}
+
+\begin{center}
+\begin{tikzpicture}[scale=0.95]
+  % 麦田里的行进路线
+  \draw[->,thick,draw=caramel] (-0.3,0) -- (10.6,0);
+  \foreach \x in {0,0.8,...,10.4} {
+    \draw[draw=caramel!70,line width=0.7pt] (\x,0.08) -- (\x,0.55);
+    \draw[draw=caramel!70,line width=0.7pt] (\x,0.55) -- (\x+0.14,0.72);
+    \draw[draw=caramel!70,line width=0.7pt] (\x,0.55) -- (\x-0.14,0.72);
+  }
+  % 分界
+  \draw[dashed,thick,draw=rosec] (3.7,0) -- (3.7,1.15);
+  \node[font=\small,text=rosec,above] at (1.85,1.0) {观察期：一律放弃};
+  \node[font=\small,text=caramel,above] at (7.2,1.0) {收割期：遇到"比前面都好"的就摘};
+  \node[font=\scriptsize,text=inkc,below] at (0,-0.12) {开始};
+  \node[font=\scriptsize,text=inkc,below] at (10.4,-0.12) {走完};
+\end{tikzpicture}
+\end{center}
+
+故事是这么讲的：苏格拉底把柏拉图带到一片麦田边，让他从一头走到另一头，
+不许回头，途中只能摘一株麦穗，而且要摘最大的那一株。
+柏拉图一路走一路看，总觉得后面还有更大的，最后两手空空地走了出来。
+苏格拉底说：这就是爱情（在另一些版本里是婚姻、是幸福）。
+
+\begin{warnbox}[先说清楚：这个故事是假的]
+这段对话\textbf{不见于柏拉图的任何一篇对话录}，也不见于现存的古希腊文献，
+是后来（主要在中文的励志读物里）流传开的寓言。
+柏拉图笔下的苏格拉底从不这样讲话。
+
+不过——它问的问题是真的，而且有一个非常干净的答案。
+\end{warnbox}
+
+要把这个故事变成数学，先得承认一件事：故事里的麦穗是"随机排列"的，
+而你\textbf{只能比较你见过的}。你不知道一株麦穗的绝对大小，
+只知道它和你之前看过的那些相比是大是小。这一点是整道题的灵魂。
+
+\section{把故事写成模型}
+
+我们把麦田换成一串按随机顺序出现的候选人，于是就有了所谓\textbf{秘书问题}
+（secretary problem），也叫择偶问题、相亲问题。
+
+\begin{keybox}[模型与假设]
+有 $n$ 个候选者，按\textbf{随机顺序}一个接一个地出现。每见完一个，
+你必须立刻决定"要"还是"不要"：
+
+\begin{enumerate}[label=(A\arabic*),leftmargin=2.6em]
+  \item 顺序完全随机，$n!$ 种排列等可能；
+  \item 只能选一个；一旦选中，过程结束，\textbf{不能反悔、不能回头}；
+  \item 你只能判断\textbf{相对}好坏（能比较任意两个见过的候选者），
+        不知道任何"绝对"信息（比如分数、身高）；
+  \item 目标是让"选中的人恰好是全体最好的那一个"的\textbf{概率最大}——
+        选到第二好和选到最差，在目标函数眼里是一样的；
+  \item $n$ 已知，而且候选者一定会全部出现（不会中途退出）。
+\end{enumerate}
+\end{keybox}
+
+第 (A4) 条看着奇怪，但它正是这个模型能被推到底的原因：
+目标不是"选个不错的"，而是"全有或全无"。
+后面第 \ref{sec:limits} 节会看到，一旦改成"选个够好的就行"，答案就变了。
+
+\section{最优策略长什么样}
+
+一个"策略"说到底就是一个\textbf{停止规则}：在每一刻，根据你看到的东西，
+决定是停下还是继续走。下面两个观察极大缩小了候选策略的范围。
+
+\subsection{观察一：非纪录的候选人，永远不该选}
+
+把"到目前为止最好的那个"叫一个\textbf{纪录}（record）。
+如果此刻出现的候选人不如前面某个人，那么他\textbf{绝不可能是全体最好的}
+（前面那个比他强）。选他就等于放弃。
+
+所以：\textbf{只有纪录才值得考虑}。这一条把"要不要选"的问题
+压缩成"要不要选这个纪录"。
+
+\subsection{观察二：值得选的时刻，一定是最后面的一段}
+
+假设你决定在第 $i$ 个纪录出现时接受。那么第 $i+1$ 个纪录出现时，你更应该接受：
+剩下的人更少了，机会更稀薄，此时出现的纪录"是全体最好"的把握只会更大。
+
+也就是说，"接受"这个决定的适用范围一定是时间轴上的\textbf{一段尾巴}：
+存在一个位置 $r$，在 $r$ 之前无论多好都放弃，从 $r$ 起遇到第一个纪录就选。
+
+\begin{keybox}[最优策略的形状]
+存在一个阈值 $r$（$2\le r\le n$），策略是：
+\begin{itemize}
+  \item 第 $1$ 到第 $r-1$ 个人，\textbf{一律拒绝}（这是观察期，用来建立标准）；
+  \item 从第 $r$ 个人起，\textbf{遇到第一个刷新纪录的人就选}。
+\end{itemize}
+于是整个问题只剩一个未知数：$r$ 取多少最好。
+\end{keybox}
+
+（上面的"观察二"是直觉论证。严格版本要用动态规划：设 $V_i$ 为
+"第 $i$ 个人是纪录时，从这一刻起继续走下去的成功概率"，
+可以证明 $V_i$ 关于 $i$ 单调，因此接受域确实是一段尾巴。
+结论不受影响。）
+
+\section{算成功率}
+
+固定阈值 $r$。我们要算的是：这套策略选出全体最优者的概率 $P(r)$。
+
+设最好的那一个恰好出现在第 $i$ 个位置（$i=r,r+1,\dots,n$）。
+由随机性，这件事的概率是 $1/n$。
+
+现在假设"最好者在第 $i$ 位"已经成立，要成功还需要什么？
+需要你在第 $r$ 位到第 $i-1$ 位之间\textbf{一个纪录都没遇到}——
+否则你会提前出手，摘走一个不是最好的。
+
+\begin{keybox}[关键的一步]
+在"最好者在第 $i$ 位"的条件下，前 $i-1$ 个人中最好的那一个，
+落在 $1,\dots,i-1$ 中任何一个位置的概率都相同。
+而"第 $r$ 到第 $i-1$ 位之间没有纪录"恰好等价于
+"前 $i-1$ 个人中最强的那个，出现在前 $r-1$ 个人里"。
+
+所以这个条件概率是
+\[
+\frac{r-1}{i-1}.
+\]
+\end{keybox}
+
+把两段乘起来再对 $i$ 求和：
+
+\[
+\boxed{\;
+P(r)\;=\;\sum_{i=r}^{n}\frac{1}{n}\cdot\frac{r-1}{i-1}
+\;=\;\frac{r-1}{n}\sum_{j=r-1}^{n-1}\frac{1}{j}\;}
+\]
+
+（第二个等号只是把 $j=i-1$ 换了元。）
+
+拿 $n=4$ 验一下：取 $r=2$，则 $P=\frac14\left(\frac11+\frac12+\frac13\right)=0.4583$。
+意思是：四个人里\emph{先放弃第一个}，然后遇到比第一个强的就选，
+有 $45.8\%$ 的把握选到最好的——比瞎蒙（$25\%$）高出一大截。
+
+\section{连续化：为什么是 \texorpdfstring{$1/e$}{1/e}}
+
+$n$ 大的时候，令 $x=r/n$，把和式看成一个积分：
+\[
+\sum_{j=r-1}^{n-1}\frac1j\;\approx\;\int_{r-1}^{n}\frac{\mathrm{d}t}{t}\;\approx\;-\ln x,
+\]
+于是
+\[
+P(r)\;\approx\;x\,(-\ln x)\;=\;-x\ln x .
+\]
+对它求导：
+\[
+\frac{\mathrm{d}}{\mathrm{d}x}\bigl(-x\ln x\bigr)=-\ln x-1,
+\]
+令它为零得 $\ln x=-1$，即
+\[
+\boxed{\;x=\frac1e\approx 0.3679\;}
+\]
+代回去，最大成功率是
+\[
+-\frac1e\ln\frac1e=\frac1e\approx 36.79\% .
+\]
+
+\begin{keybox}[这个 $1/e$ 在说什么]
+$P(x)\approx -x\ln x$ 里的两个因子其实就是"观察"与"收割"的
+矛盾：
+
+\begin{itemize}
+  \item $x$ 是\textbf{观察期}占比。它越大，你的标准越准；
+        但 $-\ln x$ 这个因子说明——观察期越长，剩下的收割机会越少
+        （$-\ln x$ 随 $x$ 增大而减小）。
+  \item 两头都不行：观察期太短（$x\to0$），你还没弄清"什么算好"就出手了；
+        观察期太长（$x\to1$），你已经快走完麦田了。
+  \item 折中点恰好是 $x=1/e$。
+\end{itemize}
+\end{keybox}
+
+\begin{center}
+\begin{tikzpicture}
+\begin{axis}[
+  width=12.2cm, height=6.6cm,
+  xlabel={$r$（从第几个开始出手）}, ylabel={成功概率 $P(r)$},
+  xmin=0, xmax=100, ymin=0, ymax=0.42,
+  grid=major, grid style={draw=caramel!18},
+  axis line style={draw=caramel!70},
+  every axis label/.style={font=\small,text=inkc},
+  tick label style={font=\scriptsize},
+  legend style={font=\scriptsize,draw=caramel!50,fill=paper,at={(0.98,0.97)},anchor=north east},
+]
+\addplot[draw=caramel,thick] coordinates {
+(1,0.01000) (3,0.08355) (5,0.13376) (7,0.17364) (9,0.20676) (11,0.23484)
+(13,0.25890) (15,0.27961) (17,0.29746) (19,0.31281) (21,0.32593) (23,0.33704)
+(25,0.34634) (27,0.35397) (29,0.36006) (31,0.36472) (33,0.36804) (35,0.37012)
+(37,0.37101) (39,0.37080) (41,0.36953) (43,0.36727) (45,0.36405) (47,0.35992)
+(49,0.35492) (51,0.34909) (53,0.34245) (55,0.33505) (57,0.32691) (59,0.31805)
+(61,0.30850) (63,0.29829) (65,0.28743) (67,0.27595) (69,0.26386) (71,0.25118)
+(73,0.23793) (75,0.22412) (77,0.20978) (79,0.19490) (81,0.17952) (83,0.16363)
+(85,0.14726) (87,0.13041) (89,0.11310) (91,0.09533) (93,0.07711) (95,0.05846)
+(97,0.03939) (99,0.01990)
+};
+\addlegendentry{$n=100$ 时的 $P(r)$}
+\addplot[draw=rosec,dashed,thick,domain=0:100,samples=2]{0.367879};
+\addlegendentry{$1/e\approx0.3679$}
+\draw[dashed,draw=rosec] (axis cs:37,0) -- (axis cs:37,0.371);
+\end{axis}
+\end{tikzpicture}
+\end{center}
+
+图里的曲线在 $r\approx37$ 处取到最高点，而且\textbf{非常平}——
+这一点很重要，下一节还会回来讲。
+
+\section{精确的最优 \texorpdfstring{$r$}{r}}
+
+连续近似给出 $r\approx n/e$，但真实的最优值是离散的。
+用 $P(r+1)-P(r)$ 比较一下相邻两项（推导见本节末）：
+\[
+P(r+1)-P(r)=\frac1n\left(\sum_{j=r}^{n-1}\frac1j-1\right).
+\]
+所以 $P(r)$ 上升还是下降，全看这个和式是大于还是小于 $1$。
+于是最优阈值是
+
+\[
+r^*=\min\left\{r:\ \sum_{j=r}^{n-1}\frac1j\le 1\right\}.
+\]
+
+\begin{center}
+\begin{tabular}{c c c c}
+\toprule
+候选人数 $n$ & 最优阈值 $r^*$ & 该拒绝前几个 & 最大成功率 $P(r^*)$ \\
+\midrule
+3     & 2   & 1    & 0.5000 \\
+5     & 3   & 2    & 0.4333 \\
+10    & 4   & 3    & 0.3987 \\
+20    & 8   & 7    & 0.3842 \\
+50    & 19  & 18   & 0.3743 \\
+100   & 38  & 37   & 0.3710 \\
+1000  & 369 & 368  & 0.3682 \\
+10000 & 3680 & 3679 & 0.3679 \\
+\midrule
+$\to\infty$ & $\approx n/e$ & $\approx 36.8\%$ & $\to 1/e=0.367879$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{warnbox}[一个小细节：$n=100$ 时严格最优是 $r=38$]
+按上表，$n=100$ 时最优是"拒绝前 $37$ 个，从第 $38$ 个开始出手"，
+对应比例 $38\%$。而 $r=37$ 时的成功率是 $0.371015$，
+与最优的 $0.371043$ 只差 $0.00003$——肉眼根本看不出。
+
+所以"$37\%$ 法则"是一个四舍五入的叫法。真正要紧的不是这个数的精确值，
+而是它所处的那个平坦区间。
+\end{warnbox}
+
+\begin{keybox}[$P(r+1)-P(r)$ 怎么来的]
+\begin{align*}
+P(r+1)-P(r)
+&=\frac1n\left[r\sum_{j=r}^{n-1}\frac1j-(r-1)\sum_{j=r-1}^{n-1}\frac1j\right]\\
+&=\frac1n\left[(r-(r-1))\sum_{j=r}^{n-1}\frac1j\;-\;1\right]
+=\frac1n\left[\sum_{j=r}^{n-1}\frac1j-1\right].
+\end{align*}
+（第二步是把第二个和式拆出 $j=r-1$ 那一项，
+它正好是 $(r-1)\cdot\frac{1}{r-1}=1$。）
+\end{keybox}
+
+\section{这个结论有多结实}
+
+最优解附近太平了，这是 $1/e$ 法则真正的价值所在。
+以 $n=100$ 为例：
+
+\begin{center}
+\begin{tabular}{c c c}
+\toprule
+观察期占比 & 相当于拒绝前几个 & 成功率 \\
+\midrule
+$5\%$  & 5  & $0.134$ \\
+$10\%$ & 10 & $0.221$ \\
+$20\%$ & 20 & $0.320$ \\
+$30\%$ & 30 & $0.363$ \\
+$\mathbf{37\%}$ & $\mathbf{37}$ & $\mathbf{0.371}$ \\
+$40\%$ & 40 & $0.370$ \\
+$50\%$ & 50 & $0.352$ \\
+$60\%$ & 60 & $0.313$ \\
+$80\%$ & 80 & $0.187$ \\
+$100\%$（永远在等）& 100 & $0.010$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{keybox}[读这张表要读出来的两件事]
+\textbf{一、$37\%$ 附近很宽容。}在 $30\%$ 到 $50\%$ 之间随便挑一个，
+损失都在 $5\%$ 以内。所以你不需要知道 $n$ 的精确值，
+只要大致估个量级就行——这对现实很有用。
+
+\textbf{二、两头都很致命。}太早出手（$10\%$）成功率只剩两成；
+而"永远觉得后面还有更好的"——走完全程都不出手，
+就只能在最后一刻随便摘一株，成功率和瞎蒙一样（$1/n=1\%$）。
+
+所以那个寓言里柏拉图两手空空，从概率上讲其实相当"正常"：
+\textbf{这是一场注定大概率失败的游戏}，最优策略也只有 $37\%$。
+\end{keybox}
+
+\section{什么时候这个结论会失效}
+\label{sec:limits}
+
+$1/e$ 法则依赖前面那五条假设，缺一条答案就会变。这些假设在现实生活中
+几乎从来不成立，所以把它当人生教条用是危险的：
+
+\begin{center}
+\begin{tabular}{p{5.6cm} p{8.2cm}}
+\toprule
+假设 & 现实中往往是什么样 \\
+\midrule
+(A1) 顺序随机 & 候选人常常扎堆出现，好坏有相关性；"今年行情好"这种信息会让模型失效 \\
+(A2) 不能反悔 & 现实中常常可以回头联系，或者先"放在池子里"；一旦允许回头，
+                最优策略会完全不同（而且成功率会高很多） \\
+(A3) 只有相对信息 & 我们通常知道一些绝对值（学历、薪资、相处的感觉）；
+                有绝对信息时，问题变成"全信息最优停止"，策略和答案都不一样 \\
+(A4) 目标是"选到最好的" & 大多数人要的是"足够好"，不是"第一名"。
+                改成分位数目标（比如"进入前 $10\%$ 就满意"），
+                最优策略会大大提前，"等等看"的代价也小得多 \\
+(A5) $n$ 已知 & 现实中你通常不知道这辈子会遇到多少人；
+                所幸上一节说过，$30\%\sim50\%$ 这片区域很平，
+                $n$ 估错一点问题不大 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+还有一条更根本的：如果目标改成\textbf{最大化被选中者的期望水平}
+（而不是"选到最好的概率"），最优策略会变得非常保守——
+因为一旦你见过足够多的人，"眼前这位在百分位上的位置"就变得可估计了。
+这是另一个问题（有时叫"全信息问题"），答案是另一条曲线。
+
+\begin{keybox}[一句话总结这些变体]
+$1/e$ 法则是"在最极端的无知下仍然能做到的最好"。
+它之所以值得记住，不是因为 $37\%$ 这个数，
+而是因为它揭示了一个结构：\textbf{任何"边看边决定"的问题里，
+都存在一个"先用一部分机会买信息、再用剩下的机会收割"的权衡}。
+这个结构在最优停止理论里到处出现，秘书问题只是它最干净的一个特例。
+\end{keybox}
+
+\section{小结}
+
+\begin{enumerate}
+  \item 把麦田问题写成模型：$n$ 个候选者随机顺序出现，
+        只能即时决定、不能回头，目标是选到最好的那个。
+  \item 只有"纪录"值得考虑；而且值得接受的时刻一定是时间轴末尾的一段。
+        所以最优策略只需一个参数 $r$：\textbf{前 $r-1$ 个一律放弃，
+        之后遇到第一个纪录就选}。
+  \item 成功率
+        $P(r)=\dfrac{r-1}{n}\displaystyle\sum_{j=r-1}^{n-1}\dfrac1j$，
+        连续化后为 $P\approx -x\ln x$（$x=r/n$），
+        在 $x=1/e$ 处取最大值 $1/e\approx36.8\%$。
+  \item 精确最优阈值是满足 $\sum_{j=r}^{n-1}\frac1j\le1$ 的最小 $r$，
+        约为 $n/e$。
+  \item 结论在 $30\%\sim50\%$ 这一大片区间里都很稳，但"太早"和"一直等"
+        都会崩塌。
+\end{enumerate}
+
+故事里的苏格拉底并没有给出策略，他只留下了一句"这就是爱情"。
+数学没能让这件事变得容易，但至少把它变清楚了：
+\textbf{三十六点八，且不能回头。}
+
+\begin{keybox}[参考]
+\begin{itemize}
+  \item 秘书问题的标准综述与完整推导，见
+        T.~S.~Ferguson, \textit{Who Solved the Secretary Problem?},
+        Statistical Science \textbf{4} (1989), 282--289；
+        以及 P.~R.~Freeman, \textit{The Secretary Problem and its Extensions:
+        A Review}, International Statistical Review \textbf{51} (1983), 189--206。
+  \item 面向大众的讲法，见 B.~Christian, T.~Griffiths,
+        \textit{Algorithms to Live By}（中译本《算法之美》），
+        其中一章专讲最优停止。
+\end{itemize}
+\end{keybox}
+
+\end{document}
