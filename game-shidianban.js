@@ -7,12 +7,12 @@
   // ====== 想调规则，改这一段就够了 ======
   const CFG = {
     startChips: 100,       // 起始筹码
-    bets: [5, 10, 25],     // 可以下的注额
+    bets: [1, 5, 10, 25],
     defaultBet: 5,
     maxCards: 5,           // 底牌 1 张 + 最多要 4 张
     dealerHitBelow: 8,     // 庄家点数低于 8 点必须要牌（想更凶可以改 7.5）
     dealerWinsTie: true,   // 点数相同算庄家赢
-    payouts: { 1: 1, 2: 2, 3: 3, 4: 5 } // 净赔率：普通 / 十点半 / 五小 / 人五小
+    payouts: { 1: 1, 2: 1, 3: 2, 4: 3 } // 净赔率：普通 / 十点半 / 五小 / 人五小
   };
 
   const SUITS = ['♠', '♥', '♦', '♣'];
@@ -110,8 +110,7 @@
             <li><b>牌型大小</b>：人五小（5 张全是 J/Q/K） &gt; 五小（5 张未爆） &gt; 十点半（凑满 10.5） &gt; 普通点数。</li>
             <li><b>比大小</b>：牌型相同就比点数，点数大的赢；<b>点数相同算庄家赢</b>（吃平）。</li>
             <li><b>庄家</b>：点数低于 8 点必须要牌，8 点及以上停牌。</li>
-            <li><b>赔率</b>（净赢几倍注）：普通 ×1、十点半 ×2、五小 ×3、人五小 ×5；输掉就赔一倍注。</li>
-            <li><b>筹码</b>：你和庄家各 100 筹码，赢的从庄家那儿拿、输的进庄家口袋。庄家赔光时按它剩下的封顶赔付；谁筹码见底，下一局自动补满 100。</li>
+            <li><b>筹码</b>：赌场内使用共享筹码，开局先扣下注；重开、切换或离桌视为弃局。每局重新洗牌，挑战中途不补领。</li>
           </ul>
         </details>
       </div>
@@ -134,7 +133,7 @@
     let mode = 'dealer';      // dealer = 和电脑庄家打；duo = 双人同屏
     let phase = 'bet';        // bet 下注 → play 玩家要牌 → dealer 庄家要牌 → reveal 开牌
     let bet = CFG.defaultBet;
-    let chips = CFG.startChips;        // 你的筹码
+    let chips = window.CasinoWallet ? window.CasinoWallet.chips : CFG.startChips;
     let dealerChips = CFG.startChips;  // 庄家的筹码（真对赌，赢得从这儿出）
     let deck = shuffled(buildDeck());
     let cards = [[], []];     // cards[0] 庄家 / 玩家一，cards[1] 你 / 玩家二
@@ -146,6 +145,8 @@
     let duoWins = [0, 0];
     let timers = [];
     let disposed = false;
+    let wagerId = null;
+    function abandonRound(){if(wagerId&&window.CasinoWallet?.finish)window.CasinoWallet.finish(wagerId,0,'十点半 弃局 -'+bet);wagerId=null;}
 
     function schedule(fn, ms) {
       const id = setTimeout(() => {
@@ -172,7 +173,7 @@
       if (deck.length < 12) { deck = shuffled(buildDeck()); tip = '牌堆快见底了，重新洗了一副。'; }
       return deck.pop();
     }
-    // 手里筹码买得起的最大一档注额（都买不起就退回最小档，等 newRound 补满）
+    // 手里筹码买得起的最大一档注额；挑战余额不足时 newRound 会拒绝开局。
     function affordableBet() {
       const ok = CFG.bets.filter(n => n <= chips);
       return ok.length ? ok[ok.length - 1] : CFG.bets[0];
@@ -205,7 +206,7 @@
         let main, sub;
         if (dealerMode) {
           if (i === 0) {
-            main = dealerChips + ' 筹码';
+            main = window.CasinoWallet ? '赌场庄家' : dealerChips + ' 筹码';
             // 庄家底牌扣着的时候不报点数，改成提示它的要牌线
             sub = cards[0].length && !isHidden(0) ? fmt(typeOf(cards[0]).p) + ' 点' : '低于 8 点必须要牌';
           } else {
@@ -272,17 +273,24 @@
     // ====== 一局的流程 ======
     function newRound() {
       clearTimers();
+      if(window.CasinoWallet)chips=window.CasinoWallet.chips;
       const minBet = Math.min.apply(null, CFG.bets);
-      // 两边谁筹码见底了，下一局就补满，免得卡住
-      if (mode === 'dealer' && chips < minBet) {
+      if (mode === 'dealer' && window.CasinoWallet && window.CasinoWallet.chips < minBet) {
+        say('筹码不足或挑战已结束；挑战途中不能补领。');
+        return;
+      }
+      // 独立演示模式保留体验筹码；赌场挑战不补领，也不限制庄家资金。
+      if (mode === 'dealer' && chips < minBet && !window.CasinoWallet) {
         chips = CFG.startChips;
         tip = '你的筹码见底了，又补满了 ' + CFG.startChips + '。';
       }
-      if (mode === 'dealer' && dealerChips < minBet) {
+      if (mode === 'dealer' && dealerChips < minBet && !window.CasinoWallet) {
         dealerChips = CFG.startChips;
         tip = '庄家赔光了，补满 ' + CFG.startChips + ' 再来。';
       }
       if (mode === 'dealer' && bet > chips) bet = affordableBet();
+      if(mode==='dealer'&&window.CasinoWallet?.begin){wagerId=window.CasinoWallet.begin('十点半',bet);if(!wagerId){say('本次挑战尚未开始、已结束或已有未完成的下注。');return;}chips=window.CasinoWallet.chips;}
+      deck=shuffled(buildDeck());
       round++;
       cards = [[], []];
       cards[0].push(drawCard());
@@ -356,12 +364,13 @@
       let capped = false;   // 庄家赔光了，只能按剩下的封顶赔
       if (outcome === 'win') {
         const want = bet * (CFG.payouts[me.rank] || 1);
-        delta = Math.min(want, dealerChips);
+        delta = window.CasinoWallet ? want : Math.min(want, dealerChips);
         capped = delta < want;
       } else if (outcome === 'lose') {
         delta = -bet;
       }
       chips += delta;
+      if (window.CasinoWallet?.finish&&wagerId) { window.CasinoWallet.finish(wagerId,bet+delta,'十点半 '+(delta>=0?'+':'')+delta);wagerId=null;chips=window.CasinoWallet.chips; }
       dealerChips -= delta;
 
       if (outcome === 'win') { stats.win++; stats.streak++; stats.best = Math.max(stats.best, stats.streak); }
@@ -374,8 +383,8 @@
           ? `你赢了 ${delta > 0 ? '+' + delta : ''}${capped ? '（庄家赔光了，封顶赔付）' : ''}`
         : outcome === 'lose' ? `你输了 ${delta}${me.rank === 0 ? '（爆牌）' : ''}` : '和局，退回本注';
       const detail = `你 ${mine} 对 庄家 ${theirs}`;
-      say(`${head} —— ${detail}。你 ${chips} 筹码，庄家 ${dealerChips} 筹码。`, outcome);
-      tip = outcome === 'win' && me.rank > 1 ? `${me.name} ×${CFG.payouts[me.rank] || 1}，赢得漂亮。` : '';
+      say(`${head} —— ${detail}。你 ${chips} 筹码${window.CasinoWallet?'':'，庄家 '+dealerChips+' 筹码'}。`, outcome);
+      tip = outcome === 'win' && me.rank > 1 ? `${me.name}，赢得漂亮。` : '';
       pushLog(`第 ${round} 局　${detail}　${resultLine(outcome === 'win' ? '胜' : outcome === 'lose' ? '负' : '和', outcome, delta)}`);
       render();
     }
@@ -425,9 +434,10 @@
 
     function resetAll() {
       clearTimers();
+      abandonRound();
       phase = 'bet';
       cards = [[], []];
-      chips = CFG.startChips;
+      chips = window.CasinoWallet ? window.CasinoWallet.chips : CFG.startChips;
       dealerChips = CFG.startChips;
       bet = CFG.defaultBet;
       round = 0;
@@ -448,6 +458,7 @@
       stop() {
         disposed = true;
         clearTimers();
+        abandonRound();
       }
     };
   }
