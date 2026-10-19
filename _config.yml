@@ -1,0 +1,4 @@
+# GitHub Pages only publishes the static frontend.
+# Django templates use their own template language.
+exclude:
+  - backend
