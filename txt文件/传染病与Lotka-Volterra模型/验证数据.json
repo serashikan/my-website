@@ -32,5 +32,20 @@
     1.5909090909090908,
     1.4772727272727273
   ],
-  "strong_mutualism_blowup_time": 3.258096538021482
+  "strong_mutualism_blowup_time": 3.258096538021482,
+  "three_species_equilibrium": [
+    0.7142857142857143,
+    0.7142857142857143,
+    0.7142857142857142
+  ],
+  "three_species_eigenvalues": [
+    -0.5714285714285714,
+    -1.0,
+    -0.5714285714285714
+  ],
+  "three_species_jacobian_error": 2.0539903111682634e-11,
+  "three_species_endpoint_errors": [
+    4.664491015660133e-12,
+    5.872191621847378e-12
+  ]
 }

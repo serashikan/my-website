@@ -150,6 +150,42 @@ def interaction_families():
             "mutualism_equilibrium":eq.tolist(),"strong_mutualism_blowup_time":tb}
 
 
+def multispecies_checks():
+    """Verify feasibility, linearization, eigenmodes and nearby trajectories."""
+    matrix = np.array([[-1, -.2, -.2], [-.2, -1, -.2], [-.2, -.2, -1]])
+    intrinsic = np.ones(3)
+    equilibrium = np.linalg.solve(matrix, -intrinsic)
+    assert np.all(equilibrium > 0)
+    assert np.max(np.abs(equilibrium - 5/7)) < 1e-14
+    assert np.max(np.abs(matrix @ equilibrium + intrinsic)) < 1e-14
+    jacobian = np.diag(equilibrium) @ matrix
+    eigenvalues = np.linalg.eigvals(jacobian)
+    assert np.allclose(np.sort(eigenvalues), [-1, -4/7, -4/7])
+    assert np.max(np.abs(eigenvalues.imag)) < 1e-12
+    for vector, rate in [(np.ones(3), -1), (np.array([1, -1, 0]), -4/7)]:
+        assert np.allclose(jacobian @ vector, rate * vector)
+    def rhs(t, values):
+        return values * (intrinsic + matrix @ values)
+    # Independently check the full nonlinear derivative at an interior equilibrium.
+    step = 1e-6
+    numerical_jacobian = np.column_stack([
+        (rhs(0, equilibrium + step * direction) -
+         rhs(0, equilibrium - step * direction)) / (2*step)
+        for direction in np.eye(3)
+    ])
+    assert np.max(np.abs(jacobian - numerical_jacobian)) < 1e-9
+    errors = []
+    for perturbation in [[.05, -.03, .01], [-.02, .04, -.05]]:
+        result = integrate(rhs, equilibrium + perturbation, 40)
+        error = np.max(np.abs(result.sol(40) - equilibrium))
+        assert error < 1e-8
+        errors.append(float(error))
+    return {"three_species_equilibrium": equilibrium.tolist(),
+            "three_species_eigenvalues": eigenvalues.real.tolist(),
+            "three_species_jacobian_error": float(np.max(np.abs(jacobian-numerical_jacobian))),
+            "three_species_endpoint_errors": errors}
+
+
 def main():
     def infection_peak(t, z):
         return BETA*z[0]-GAMMA
@@ -277,6 +313,7 @@ def main():
              "lv_invariant_drift":float(np.ptp(h)),
              "euler_H_drift":float(drift[-1])}
     metrics.update(interaction_families())
+    metrics.update(multispecies_checks())
     (ROOT/"验证数据.json").write_text(json.dumps(metrics,ensure_ascii=False,indent=2)+"\n")
     print(json.dumps(metrics,ensure_ascii=False,indent=2))
     print("All conservation, peak, equilibrium, positivity and convergence checks passed.")

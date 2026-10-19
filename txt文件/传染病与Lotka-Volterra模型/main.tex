@@ -45,7 +45,7 @@
 
 这篇文章把传染病模型和 Lotka--Volterra 相互作用模型放在一起讲。
 后者不只有捕食，还包括争夺资源的竞争、彼此帮助的互利合作。
-先从箭头和数量收支建立方程，再看传播阈值、疫情峰值，以及种群的振荡、共存与排斥。
+先从箭头和数量收支建立方程，再看传播阈值、疫情峰值，以及种群的振荡、共存与排斥，最后用矩阵和特征值简要推广到多物种。
 \textbf{不要求预先学过微积分}：进阶推导会标出来，可以先读图和文字。
 所有参数都是为说明数学而设的假想值，不对应某种疾病或某个真实生态系统。
 （本文由 GPT 写作）
@@ -581,6 +581,101 @@ $\mu y/(1+hy)$，其中 $h>0$。当 $y$ 很大时，这个帮助项至多接近 
 捕食模型的闭合轨道也不是整个 LV 家族共有的性质。
 \end{warnbox}
 
+\section{再多几个物种：把关系装进矩阵}
+生态系统通常不止两个物种。把前面的写法推广到 $n$ 个物种，就是
+\[
+\dot x_i=x_i\left(r_i+\sum_{j=1}^{n}a_{ij}x_j\right),\qquad i=1,\ldots,n.
+\]
+下标 $i$ 是物种编号，$\sum$ 表示把各物种的影响加起来。
+例如三物种时，第一个括号就是 $r_1+a_{11}x_1+a_{12}x_2+a_{13}x_3$。
+它仍然假设各种影响能按这些线性项相加；涉及“三者同时出现才产生作用”的高阶机制，需要另加模型项。
+
+\subsection{矩阵不是新机制，而是一张有运算规则的关系表}
+将数量和内禀增长率分别排成列向量，将系数排成矩阵：
+\[
+\mathbf x=\begin{pmatrix}x_1\\\vdots\\x_n\end{pmatrix},\qquad
+\mathbf r=\begin{pmatrix}r_1\\\vdots\\r_n\end{pmatrix},\qquad
+A=(a_{ij})_{n\times n}.
+\]
+矩阵第 $i$ 行、第 $j$ 列，记录的仍是“物种 $j$ 对物种 $i$ 的影响”。
+$A\mathbf x$ 的第 $i$ 个分量，就是那一行系数分别乘数量后相加。
+定义 $\operatorname{diag}(\mathbf x)$ 为主对角线上放 $x_1,\ldots,x_n$、其余位置全为零的矩阵，
+它左乘一个向量，会把第 $i$ 个分量乘以 $x_i$。于是整组方程可写成
+\[
+\boxed{\dot{\mathbf x}=\operatorname{diag}(\mathbf x)(\mathbf r+A\mathbf x).}
+\]
+同一个 $A$ 可以同时含有捕食、竞争、互利关系，而且通常 $a_{ij}\ne a_{ji}$。
+\textbf{矩阵表示让复杂关系更容易整理，却没有把原本的非线性微分方程变成线性方程。}
+
+\subsection{第一件工具：用线性方程找全体共存的候选点}
+若平衡点每个数量都严格为正，记为 $\mathbf x_*>0$，
+那么每个括号都必须为零，故
+\[
+\boxed{A\mathbf x_*=-\mathbf r.}
+\]
+求平衡由此转化为解线性方程组！若 $A$ 可逆，唯一解为 $-A^{-1}\mathbf r$；
+实际计算通常直接解方程，不必先算逆矩阵。
+但\textbf{每个分量都为正}才是可行的全体共存平衡；出现负数，说明该候选点没有种群意义。
+若 $A$ 不可逆，则要检查方程是否相容，可能无解，也可能有多个解，不能直接写逆矩阵。
+
+\subsection{第二件工具：用特征值看小扰动会不会消退}
+找到平衡后，把数量稍稍挪动，写成 $\mathbf x=\mathbf x_*+\mathbf u$。
+代回方程，忽略扰动之间的乘积，得到近似
+\[
+\dot{\mathbf u}\approx J_*\mathbf u,\qquad
+\boxed{J_*=\operatorname{diag}(\mathbf x_*)A.}
+\]
+$J_*$ 叫平衡处的\textbf{雅可比矩阵}，记录小变化如何影响变化速度。
+一般不能直接用 $A$ 代替它：左边的对角矩阵给 $A$ 的各行乘上了不同的平衡数量。
+
+对实特征向量 $\mathbf v$，若 $J_*\mathbf v=\lambda\mathbf v$，
+则沿这个方向的线性扰动按 $e^{\lambda t}$ 缩小或放大。
+这就是\textbf{特征值} $\lambda$ 与\textbf{特征向量} $\mathbf v$ 的用处。
+特征值也可能是复数，虚部与振荡有关，判断衰减还是增长则看实部：
+\begin{itemize}
+\item 全部特征值的实部严格小于零：这个共存平衡局部渐近稳定；
+\item 至少一个实部严格大于零：这个内部平衡不稳定；
+\item 没有正实部，但有零实部：线性化不能直接定论，需要进一步分析。
+\end{itemize}
+前面经典捕食版本的纯虚特征值，就属于最后一种情况；
+我们还借助不变量，才确认其闭合轨道。局部稳定也不等于任意远处的初值都会回到这里。
+
+\subsection{一个能手算的三物种竞争例子}
+取 $\mathbf r=(1,1,1)^{\mathsf T}$，上标 $\mathsf T$ 表示把一行转成一列，并设
+\[
+A=\begin{pmatrix}
+-1&-0.2&-0.2\\
+-0.2&-1&-0.2\\
+-0.2&-0.2&-1
+\end{pmatrix}.
+\]
+即三种群均有自身限制，任意另一个物种带来的竞争系数为 $0.2$。
+由对称性，令三个平衡数量都为 $q$，则 $1-1.4q=0$，所以
+\[
+\mathbf x_*=\begin{pmatrix}5/7\\5/7\\5/7\end{pmatrix}>0,\qquad J_*=\frac57 A.
+\]
+$J_*$ 的特征值为 $-1,-4/7,-4/7$，全部为负，故该共存平衡局部渐近稳定。
+例如 $(1,1,1)^{\mathsf T}$ 是特征值 $-1$ 的方向，表示三者一起偏多或偏少的扰动会消退；
+$(1,-1,0)^{\mathsf T}$ 是特征值 $-4/7$ 的方向，表示一多一少的失衡也会消退。
+用 NumPy 可以核验：
+\Needspace{10\baselineskip}
+\begin{lstlisting}
+import numpy as np
+A = np.array([[-1, -.2, -.2], [-.2, -1, -.2], [-.2, -.2, -1]])
+r = np.ones(3)
+x_star = np.linalg.solve(A, -r)
+J = np.diag(x_star) @ A
+print(x_star)             # [0.71428571, 0.71428571, 0.71428571]
+print(np.linalg.eigvals(J))  # -1, -4/7, -4/7 (order may vary)
+\end{lstlisting}
+
+\begin{keybox}[三个问题，按顺序回答]
+先问线性方程有没有解，再问候选数量是否全为正，最后问雅可比矩阵的特征值是否支持局部稳定。
+对某些物种数量为零的边界平衡，不能把全部括号都设为零，也不能直接套用上面的简化雅可比公式。
+尤其要检查消失物种在稀少时能否增长：其增长率为 $r_i+\sum_j a_{ij}x_j^*$，
+这正是竞争一节中“稀少的一方能否进入”的多物种版本。
+\end{keybox}
+
 \section{回到传染病：同样是相遇，为何结局不同}
 先把 SIR 与经典捕食版本作比较：
 \begin{center}
@@ -631,7 +726,8 @@ Y_{n+1}=Y_n+h(cX_nY_n-dY_n),
 
 随文的 \texttt{数值实验.py} 用 NumPy、SciPy 和 Matplotlib 生成七张图，
 并检查 SIR 总量守恒、峰值条件、最终规模方程、捕食版本的平衡与不变量，
-以及竞争的四类结局、互利共存平衡和强互利的解析例子，
+以及竞争的四类结局、互利共存平衡、强互利的解析例子，
+并核验三物种竞争例子的线性方程、雅可比矩阵与特征值；
 还用更严格的积分精度比较结果。验证数据保存在 \texttt{验证数据.json} 中。
 图中文字采用 TeX Live 自带文鼎宋体，其他机器可通过 \texttt{CJK\_FONT} 指定字体文件。
 图像来自假想参数下的计算，没有把真实疫情或生态观测伪装成模拟结果。
@@ -651,6 +747,7 @@ $Y>10$，猎物减少；$X>25$，捕食者仍增加。
 \end{enumerate}
 \end{keybox}
 
+\Needspace{28\baselineskip}
 \begin{keybox}[参考与继续阅读]
 \begin{itemize}
 \item W.~O.~Kermack, A.~G.~McKendrick，
@@ -668,6 +765,9 @@ University of Wyoming 种群生态学课程材料。可对照竞争的四类结�
 \href{https://www.d.umn.edu/~bpeckham/export/Papers/GPP_UMD_TR2006-2.pdf}{A 2D Differential Equations Model for Mutualism}，
 University of Minnesota Duluth 技术报告 TR 2006-2。
 讨论非专性与专性互利，以及使帮助作用饱和的建模方法。
+\item V.~Dobrushkin，
+\href{https://www.cfm.brown.edu/people/dobrush/am34/Mathematica/ch3/linear.html}{Linearization}，
+Brown University 微分方程教程。可继续阅读雅可比矩阵、特征值与局部稳定性。
 \end{itemize}
 \end{keybox}
 \end{document}
