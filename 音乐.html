@@ -9,6 +9,12 @@
     <link rel="icon" href="图片/favicon.png" type="image/png">
     <!-- 全站共享样式 -->
     <link rel="stylesheet" href="风格.css">
+    <style>
+        .music-video { max-width: 1080px; }
+        .music-video h1 { margin: 0 0 8px; font-size: clamp(24px, 3vw, 34px); color: var(--ink); }
+        .music-video p { margin: 0 0 20px; }
+        .music-video video { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; background: #111; border-radius: 12px; cursor: auto; }
+    </style>
 </head>
 
 <body>
@@ -26,7 +32,10 @@
             <p class="side-title">目录</p>
             <ul class="menu">
                 <li>
-                    <a data-target="prologue">前言</a>
+                    <a href="#prologue" data-target="prologue" class="current">前言</a>
+                </li>
+                <li>
+                    <a href="#tooku" data-target="tooku">遠く遠く遠く</a>
                 </li>
             </ul>
         </aside>
@@ -34,12 +43,21 @@
         <main class="main">
             <div id="prologue" class="content">这是塞拉爱米露的音乐部分，塞拉爱米露是一名狂热的vocaloid粉丝，除此之外也欣赏其他的多种音乐风格。<br>
             这里记录着塞拉爱米露对一些音乐的评价以及塞拉爱米露自己的音乐尝试。</div>
+            <section id="tooku" class="content music-video" aria-labelledby="tooku-title">
+                <h1 id="tooku-title">遠く遠く遠く</h1>
+                <p>完整版 · 1080p</p>
+                <video controls playsinline preload="none" width="1920" height="1080"
+                    poster="音频文件/遠く遠く遠く_封面.jpg" aria-label="遠く遠く遠く 完整版音乐视频">
+                    <source src="音频文件/遠く遠く遠く_完整版_1080p.mp4" type="video/mp4">
+                    你的浏览器暂不支持视频播放，可<a href="音频文件/遠く遠く遠く_完整版_1080p.mp4">打开视频文件</a>观看。
+                </video>
+            </section>
             <div id="txtBox" class="content"></div>
         </main>
     </div>
     <script>
         // 1. 获取所有菜单
-        let links = document.querySelectorAll("a");
+        let links = document.querySelectorAll(".menu a");
 
         // 2. 获取两个核心内容区
         let prologue = document.getElementById("prologue");
@@ -47,13 +65,14 @@
 
         // 3. 给每个菜单加点击
         links.forEach(link => {
-            link.onclick = function () {
+            link.onclick = function (event) {
+                event.preventDefault();
 
                 // ======================
                 // 第一步：全部隐藏
                 // ======================
-                prologue.classList.remove("active");
-                txtBox.classList.remove("active");
+                document.querySelectorAll(".content").forEach(content => content.classList.remove("active"));
+                document.querySelectorAll("video").forEach(video => video.pause());
                 txtBox.classList.remove("md");   // 换回纯文本时撤掉 Markdown 排版
 
                 // ======================
