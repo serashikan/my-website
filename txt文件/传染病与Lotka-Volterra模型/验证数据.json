@@ -1,0 +1,13 @@
+{
+  "sir_I_peak_day": 38.35530767176262,
+  "sir_incidence_peak_day": 31.891852946096673,
+  "sir_peak_I": 3007.960705552756,
+  "sir_final_S": 594.4776831626918,
+  "sir_final_ever_infected": 9405.522316837309,
+  "lv_prey_first_peak": 0.34061784066253187,
+  "lv_predator_first_peak": 2.1849856109088646,
+  "lv_small_period": 8.885765876316732,
+  "sir_invariant_drift": 3.99082988877808e-11,
+  "lv_invariant_drift": 9.959524871483438e-11,
+  "euler_H_drift": 0.12369688677019955
+}
