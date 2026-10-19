@@ -1,0 +1,15 @@
+[Unit]
+Description=Sera public HTTPS website origin
+BindsTo=sera-website-tunnel.service
+After=sera-website-tunnel.service
+
+[Service]
+Type=simple
+WorkingDirectory=%h/sera-account-lab
+Environment=DJANGO_SETTINGS_MODULE=config.public_settings
+EnvironmentFile=%h/sera-account-lab/.local/public.env
+ExecStart=%h/sera-account-lab/.venv/bin/gunicorn --config gunicorn.conf.py --bind 127.0.0.1:8002 config.wsgi:application
+Restart=on-failure
+RestartSec=5
+UMask=0077
+NoNewPrivileges=true

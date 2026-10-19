@@ -1,0 +1,13 @@
+[Unit]
+Description=Sera temporary Cloudflare HTTPS tunnel
+After=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/sera-account-lab
+ExecStartPre=/usr/bin/truncate -s 0 %h/sera-account-lab/.local/tunnel.log
+ExecStart=%h/.local/bin/cloudflared tunnel --no-autoupdate --protocol http2 --edge-ip-version 4 --metrics 127.0.0.1:20242 --logfile %h/sera-account-lab/.local/tunnel.log --url http://127.0.0.1:8002
+# 再创建隧道会换网址，需通过 start_public_test.sh 同步精确的域名。
+Restart=no
+UMask=0077
+NoNewPrivileges=true

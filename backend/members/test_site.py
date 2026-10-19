@@ -53,6 +53,14 @@ class PrivateSiteTests(TestCase):
         self.assertNotIn("Access-Control-Allow-Origin", response.headers)
         self.assertIn("Cookie", response.headers["Vary"])
 
+    def test_static_pages_and_embedded_pdfs_only_allow_same_origin_frames(self):
+        self.client.force_login(self.user)
+        for path in ("/音乐.html", "/txt文件/article.pdf"):
+            response = self.client.get(path)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.headers["X-Frame-Options"], "SAMEORIGIN")
+            response.close()
+
     def test_logging_out_blocks_reusing_file_url_and_conditional_requests(self):
         self.client.force_login(self.user)
         response = self.client.get("/站点内容.js")

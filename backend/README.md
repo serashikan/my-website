@@ -57,7 +57,7 @@ cd backend
 2. 将 `backend/` 源码同步到远端项目目录，排除 `.venv/`、`.local/`、`__pycache__/`。
 3. 仅把本机生成的 `.local/site/` 内容同步到远端对应目录；不要同步整个 `.local/`。
 4. 远端安装锁定的依赖、执行 `migrate` 和 `collectstatic`。
-5. `systemctl --user restart sera-website`。
+5. `systemctl --user restart sera-website`；公网临时入口运行时，再执行 `systemctl --user restart sera-website-public`。
 
 例如，`SSH_TARGET` 必须先设置为实际 SSH 目标：
 
@@ -91,9 +91,50 @@ ssh -N -o ExitOnForwardFailure=yes -L 127.0.0.1:18000:127.0.0.1:8000 "$SSH_TARGE
 
 打开 `http://127.0.0.1:18000/`。服务没有监听校园网网卡，所以同校其他人目前也不能直接访问 `校园IP:8000`。
 
-校园内网地址不是可供校外直接访问的公网入口。后续若要给朋友使用，应先确认学校允许的接入方式和可用网络，再配置稳定的 HTTPS 入口。可以评估学校提供的网络服务或合适的隧道/托管服务；本次没有启动公网隧道，也没有改防火墙或路由器。
+校园内网地址不能供校外直接访问。临时朋友入口采用 [Cloudflare Quick Tunnel](https://developers.cloudflare.com/tunnel/get-started/quick-tunnels/)：Mint 主动建立出站连接，无需在校园网路由器开放端口。朋友访问随机的 HTTPS 网址，Cloudflare 将请求沿隧道转给 Mint。网页、账号和便签仍在 Mint；Cloudflare 处理入口 HTTPS 和流量转发。GitHub Pages 不参与这条链路。
 
-公网接入需要配置明确的域名、HTTPS、登录尝试限制和备份。配置项包括 `DJANGO_ALLOWED_HOSTS`、`DJANGO_PUBLIC_HTTPS=1`、`DJANGO_CSRF_TRUSTED_ORIGINS`。仅在可信 HTTPS 代理后启用 `DJANGO_TRUST_HTTPS_PROXY=1`。
+```text
+朋友浏览器 → HTTPS 临时网址 → Cloudflare 隧道 → Mint 127.0.0.1:8002 → Django/SQLite
+你的 Mac   → SSH 端口转发                       → Mint 127.0.0.1:8000 → 同一份数据
+```
+
+### 安装与启动临时入口
+
+从 [Cloudflare 官方下载页](https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/downloads/) 安装 Linux amd64 `cloudflared` 到 `~/.local/bin/cloudflared`，核对官方发布校验值。将 `deploy/sera-website-tunnel.service` 和 `deploy/sera-website-public.service` 放到 Mint 的 `~/.config/systemd/user/`，然后执行：
+
+```bash
+systemctl --user daemon-reload
+sh ~/sera-account-lab/deploy/start_public_test.sh
+```
+
+脚本先停旧的公网入口，创建隧道，再把本次精确域名写到 `.local/public.env`，最后启动公网 Django。启动过程中域名尚未确定时，8002 上不运行网站。成功后显示可分享的临时网址。不要手动单独重启隧道，否则网址变化后后端不会接受新域名；重新运行脚本即可一起更新。
+
+如果 Mint 开启 Clash TUN，`curl --noproxy '*'` 仍会经过 TUN 的规则。隧道的申请接口 `api.trycloudflare.com` 与数据连接 `*.argotunnel.com` 必须能连通；代理节点失效时，可仅对这些域名设置直连，其他流量保持原策略。`--protocol http2` 只控制数据连接，不会修复网址申请接口的 TLS 连接。
+
+本次已在当前 Clash 订阅的规则扩展中持久前置这两条规则，并备份原配置：
+
+```text
+DOMAIN,api.trycloudflare.com,DIRECT
+DOMAIN-SUFFIX,argotunnel.com,DIRECT
+```
+
+首次生成的随机域名可能需要等 DNS 记录生效；本机短暂的解析失败不等于 Django 启动失败。
+
+临时入口的登录/注册与 SSH 入口共用账号和数据，但使用单独的安全 Cookie。它只接受本次随机域名，要求 HTTPS，检查 CSRF 来源，并对同一访客限制登录 POST（每 5 分钟 30 次）及注册 POST（每小时 10 次）。访客 IP 只取 loopback 隧道转发的有效 `CF-Connecting-IP`；不使用任意 `X-Forwarded-For`。限速存在单 worker 进程的内存缓存，进程重启会清空；若将来增加 worker 或做长期运行，应先改为共享限速存储。
+
+```bash
+# 查看状态/日志
+systemctl --user status sera-website-tunnel sera-website-public
+journalctl --user -u sera-website-tunnel -u sera-website-public -n 30 --no-pager
+# 关闭临时网址（SSH 入口继续运行）
+systemctl --user stop sera-website-tunnel
+# 重新生成临时网址
+sh ~/sera-account-lab/deploy/start_public_test.sh
+```
+
+Quick Tunnel 用于测试，不保证持续可用，隧道停止则网址失效，每次创建会换网址。这两个公网用户服务不设开机自动启动，隧道进程退出后也不自动创建新网址；隧道停止会连带停止公网后端，避免沿用旧域名。Mint 必须保持开机、联网并有用户会话；当前没有启用 linger，无人登录或重启后请先 SSH 登录再运行启动脚本。长期使用时再配置固定域名、持久服务和自动备份。
+
+拿到网址的人可以注册普通账号并访问 Mint 完整版。临时随机网址不是访问权限；权限由 Django 登录检查控制。
 
 ## 权限与资源验证
 

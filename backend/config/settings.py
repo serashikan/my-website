@@ -32,11 +32,11 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
     # 顺序不能互换：文件服务器之前，先检查账号和登录状态。
     "members.middleware.SiteLoginRequiredMiddleware",
     "members.static_files.SiteStaticFilesMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
-    "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 ROOT_URLCONF = "config.urls"
 TEMPLATES = [{
@@ -91,4 +91,5 @@ SECURE_SSL_REDIRECT = PUBLIC_HTTPS
 CSRF_TRUSTED_ORIGINS = [value for value in os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",") if value]
 if os.environ.get("DJANGO_TRUST_HTTPS_PROXY", "0") == "1":
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-X_FRAME_OPTIONS = "DENY"
+# 站内 PDF 使用同源 embed；同时阻止其他网站把本站嵌入 iframe。
+X_FRAME_OPTIONS = "SAMEORIGIN"
