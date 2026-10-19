@@ -1,0 +1,8 @@
+.venv/
+.local/
+__pycache__/
+*.py[cod]
+*.sqlite3*
+.env
+.DS_Store
+wheelhouse/

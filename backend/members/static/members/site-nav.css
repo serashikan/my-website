@@ -1,0 +1,10 @@
+.site-account-nav { margin-left: auto; padding: 10px clamp(12px, 3vw, 32px); display: flex; align-items: center; justify-content: flex-end; gap: 14px; flex-wrap: wrap; font: 14px/1.5 system-ui, sans-serif; color: #5f432d; }
+.site-account-nav a, .site-account-nav button { color: #5f432d; cursor: pointer; white-space: nowrap; }
+.site-account-nav button { font: inherit; padding: 0; background: none; border: 0; text-decoration: underline; text-underline-offset: 3px; }
+.site-account-nav form { margin: 0; }
+.site-account-name { max-width: 10em; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
+.site-account-nav.is-floating { position: fixed; top: 12px; right: 12px; z-index: 950; background: #fff8eef2; border: 1px solid #e9dbc7; border-radius: 16px; box-shadow: 0 2px 10px #7a5e3e12; }
+.top-bar .logo-slot { min-width: 0; flex: 0 1 auto; padding-right: 8px; }
+.top-bar .logo { max-width: min(340px, 48vw); }
+.site-account-nav a:focus-visible, .site-account-nav button:focus-visible { outline: 2px solid #a4516b; outline-offset: 4px; }
+@media (max-width: 620px) { .site-account-name { display: none; } .site-account-nav { gap: 10px; font-size: 13px; } .top-bar .logo { max-width: 44vw; height: auto; max-height: var(--logo-img); } }

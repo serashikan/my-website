@@ -1,0 +1,16 @@
+[Unit]
+Description=Sera and Milu private website
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/sera-account-lab
+Environment=DJANGO_DEBUG=0
+ExecStart=%h/sera-account-lab/.venv/bin/gunicorn --config gunicorn.conf.py config.wsgi:application
+Restart=on-failure
+RestartSec=5
+UMask=0077
+NoNewPrivileges=true
+
+[Install]
+WantedBy=default.target

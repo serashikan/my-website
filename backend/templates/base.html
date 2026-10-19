@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}朋友的小屋{% endblock %} · 塞拉爱米露</title>
+    <style>
+        :root { color-scheme: light; font-family: system-ui, "PingFang SC", "Microsoft YaHei", sans-serif; color: #3b3026; background: #faf0e6; }
+        * { box-sizing: border-box; }
+        body { margin: 0; line-height: 1.8; }
+        header { border-bottom: 1px solid #e9dbc7; background: #eed4b0; }
+        .bar { max-width: 1000px; margin: auto; padding: 18px 24px; display: flex; gap: 20px; flex-wrap: wrap; align-items: center; justify-content: space-between; }
+        .brand { font-weight: 750; letter-spacing: .06em; text-decoration: none; }
+        nav { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; font-size: 14px; }
+        a { color: #78512f; text-underline-offset: 4px; }
+        main { max-width: 760px; margin: 56px auto; padding: 0 24px; }
+        .card { background: #fffdf9; border: 1px solid #e9dbc7; border-radius: 20px; padding: clamp(24px, 5vw, 44px); box-shadow: 0 12px 36px #7a5e3e0c; }
+        h1 { font-size: clamp(26px, 5vw, 36px); line-height: 1.4; margin: 0 0 18px; }
+        p { color: #6d5c4b; }
+        .eyebrow { color: #9c8a76; font-size: 12px; letter-spacing: .18em; margin-top: 0; }
+        label { display: block; margin: 18px 0 6px; font-weight: 600; }
+        input, textarea { width: 100%; border: 1px solid #c9b49a; background: #fffdfa; color: #3b3026; border-radius: 9px; padding: 12px; font: inherit; }
+        textarea { resize: vertical; }
+        input:focus-visible, textarea:focus-visible, a:focus-visible, button:focus-visible { outline: 3px solid #e0749a; outline-offset: 3px; }
+        button, .button { display: inline-block; border: 0; border-radius: 10px; background: #775334; color: white; padding: 11px 20px; font: inherit; font-weight: 600; cursor: pointer; text-decoration: none; }
+        .actions { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; margin-top: 26px; }
+        nav form { margin: 0; }
+        nav button { padding: 0; background: none; color: #78512f; font-size: inherit; font-weight: normal; text-decoration: underline; text-underline-offset: 4px; }
+        .helptext { display: block; font-size: 13px; color: #776650; }
+        .helptext ul { padding-left: 20px; }
+        .errorlist { color: #a42f3a; padding-left: 20px; }
+        .notice { background: #f0eadb; border-radius: 10px; padding: 12px 16px; margin-bottom: 18px; }
+        footer { text-align: center; color: #9c8a76; font-size: 13px; padding: 24px; }
+        @media (max-width: 480px) { main { margin: 28px auto; padding: 0 16px; } .bar { padding: 16px; } }
+    </style>
+</head>
+<body>
+    <header><div class="bar">
+        <a class="brand" href="{% url 'home' %}">sera &amp; milu · 朋友的小屋</a>
+        <nav aria-label="账号导航">
+            {% if user.is_authenticated %}<a href="/主页.html">回到网站</a>{% endif %}
+            {% if user.is_authenticated %}
+                <a href="{% url 'account' %}">我的小屋</a>
+                <a href="{% url 'password_change' %}">修改密码</a>
+                {% if user.is_staff %}<a href="{% url 'admin:index' %}">管理账号</a>{% endif %}
+                <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit">退出登录</button></form>
+            {% else %}<a href="{% url 'login' %}">登录</a>{% endif %}
+        </nav>
+    </div></header>
+    <main>
+        {% for message in messages %}<div class="notice" role="status">{{ message }}</div>{% endfor %}
+        <section class="card">{% block content %}{% endblock %}</section>
+    </main>
+    <footer>塞拉爱米露 · 留一盏小灯给熟悉的朋友</footer>
+</body>
+</html>

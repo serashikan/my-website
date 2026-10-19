@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}我的小屋{% endblock %}
+{% block content %}
+<p class="eyebrow">YOUR LITTLE ROOM</p>
+<h1>欢迎回来，{{ user.get_short_name|default:user.username }}。</h1>
+<p>这里的便签只向当前账号展示。站主负责维护数据库，请不要填写密码等敏感信息。</p>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <div class="actions"><button type="submit">保存便签</button></div>
+</form>
+{% if note %}<p class="helptext">上次保存：{{ note.updated_at|date:"Y年n月j日 H:i" }}</p>{% endif %}
+{% endblock %}
