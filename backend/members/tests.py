@@ -88,9 +88,8 @@ class AccountFlowTests(TestCase):
         })
         self.assertRedirects(response, reverse("account"))
 
-    def test_note_length_is_checked_by_server_and_no_public_registration(self):
+    def test_note_length_is_checked_by_server(self):
         self.client.force_login(self.alice)
         response = self.client.post(reverse("account"), {"text": "x" * 1001})
         self.assertEqual(response.status_code, 200)
         self.assertFalse(PrivateNote.objects.filter(owner=self.alice).exists())
-        self.assertEqual(self.client.get("/accounts/register/").status_code, 404)

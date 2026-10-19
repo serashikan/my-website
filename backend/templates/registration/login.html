@@ -3,11 +3,15 @@
 {% block content %}
 <p class="eyebrow">COME ON IN</p>
 <h1>欢迎回来。</h1>
-<p>这里是塞拉爱米露的个人网站。请使用站主为你创建的账号登录。</p>
+<p>这里是塞拉爱米露的个人网站。登录后，回到自己的小屋。</p>
 <form method="post">
     {% csrf_token %}
     {{ form.as_p }}
     {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
     <div class="actions"><button type="submit">登录</button><a href="{% url 'home' %}">回到门口</a></div>
 </form>
+<div class="actions">
+    <a href="{% url 'register' %}">还没有账号？注册</a>
+    <a href="{% url 'password_reset' %}">忘记密码？</a>
+</div>
 {% endblock %}

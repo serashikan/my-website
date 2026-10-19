@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}注册{% endblock %}
+{% block content %}
+<p class="eyebrow">A ROOM OF YOUR OWN</p>
+<h1>给自己留一个小地方。</h1>
+<p>设置用户名和密码，注册后就可以进入你的小屋。</p>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <div class="actions">
+        <button type="submit">注册并进入小屋</button>
+        <a href="{% url 'login' %}">已有账号？登录</a>
+    </div>
+</form>
+{% endblock %}

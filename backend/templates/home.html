@@ -3,9 +3,9 @@
 <p class="eyebrow">WELCOME HOME</p>
 <h1>给熟悉的朋友，留一个小地方。</h1>
 <p>登录后可以在自己的小屋里写一条便签，下次回来时再接着写。</p>
-<p>账号由站主创建。如果还没有账号，可以向站主申请。</p>
+<p>还没有账号的话，可以先为自己注册一间小屋。</p>
 <div class="actions">
     {% if user.is_authenticated %}<a class="button" href="{% url 'account' %}">进入我的小屋</a>
-    {% else %}<a class="button" href="{% url 'login' %}">登录小屋</a>{% endif %}
+    {% else %}<a class="button" href="{% url 'login' %}">登录小屋</a><a href="{% url 'register' %}">注册账号</a>{% endif %}
 </div>
 {% endblock %}

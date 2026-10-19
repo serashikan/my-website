@@ -1,11 +1,13 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import login
+from django.db import IntegrityError, transaction
 from django.http import JsonResponse
 from django.middleware.csrf import get_token
 from django.shortcuts import redirect, render
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_http_methods, require_safe
-from .forms import PrivateNoteForm
+from .forms import PrivateNoteForm, RegistrationForm
 from .models import PrivateNote
 
 
@@ -17,6 +19,32 @@ def home(request):
 @require_safe
 def health(request):
     return JsonResponse({"status": "ok"})
+
+
+@never_cache
+@require_http_methods(["GET", "POST"])
+def register(request):
+    if request.user.is_authenticated:
+        return redirect("account")
+    form = RegistrationForm(request.POST if request.method == "POST" else None)
+    if request.method == "POST" and form.is_valid():
+        try:
+            with transaction.atomic():
+                user = form.save()
+        except IntegrityError:
+            # 同名注册同时提交时，数据库的唯一约束仍是最后一道检查。
+            form.add_error("username", "这个用户名已经有人用了，请换一个。")
+        else:
+            login(request, user, backend="django.contrib.auth.backends.ModelBackend")
+            messages.success(request, "注册成功，欢迎来到你的小屋。")
+            return redirect("account")
+    return render(request, "registration/register.html", {"form": form})
+
+
+@never_cache
+@require_safe
+def password_reset_help(request):
+    return render(request, "registration/password_reset_help.html")
 
 
 @never_cache

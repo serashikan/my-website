@@ -11,7 +11,9 @@ class SiteLoginRequiredMiddleware:
     def __call__(self, request):
         # /static/ 只含 Django 登录/管理界面的样式脚本，不放网站正文资源。
         public_asset = request.path_info.startswith("/static/")
-        public_page = request.path_info in {"/accounts/login/", "/health/"}
+        public_page = request.path_info in {
+            "/accounts/login/", "/accounts/register/", "/accounts/password_reset/", "/health/",
+        }
         if public_asset or public_page or request.user.is_authenticated:
             response = self.get_response(request)
         else:
