@@ -71,6 +71,85 @@ def save(fig, name):
     plt.close(fig)
 
 
+def interaction_families():
+    """Check competition outcomes and self-limited mutualism independently."""
+    def competition(t,z,alpha,beta):
+        x,y=z
+        return [x*(1-x-alpha*y), y*(1-y-beta*x)]
+    cases=[(0.5,0.5,"稳定共存"),(0.5,1.5,"物种 x 排斥 y"),
+           (1.5,0.5,"物种 y 排斥 x"),(1.5,1.5,"双稳态：初值影响结局")]
+    starts=[(0.1,0.9),(0.9,0.1),(0.2,0.2),(0.9,0.9),(0.55,0.45),(0.45,0.55)]
+    time=np.linspace(0,80,1601)
+    fig,axes=plt.subplots(2,2,figsize=(7.8,6.2),sharex=True,sharey=True)
+    equilibrium_checks={}
+    for ax,(alpha,beta,title) in zip(axes.flat,cases):
+        xx=np.linspace(0,1.1,300)
+        ax.plot(xx,(1-xx)/alpha,color=BROWN,ls="--",lw=0.8,label="x 零增长线")
+        ax.plot(xx,1-beta*xx,color=PINK,ls=":",lw=0.9,label="y 零增长线")
+        for initial in starts:
+            values=integrate(lambda t,z:competition(t,z,alpha,beta),initial,80).sol(time)
+            assert values.min()>-1e-10
+            ax.plot(*values,color=BLUE,lw=0.9,alpha=0.8)
+            ax.plot(*initial,".",color=BLUE,ms=3)
+        ax.set(title=f"{title}\n"+rf"$\alpha={alpha},\ \beta={beta}$",
+               xlim=(0,1.1),ylim=(0,1.1))
+        test=integrate(lambda t,z:competition(t,z,alpha,beta),[0.2,0.3],80)
+        if alpha<1 and beta<1:
+            expected=np.array([(1-alpha)/(1-alpha*beta),(1-beta)/(1-alpha*beta)])
+        elif alpha<1 and beta>1:
+            expected=np.array([1,0])
+        elif alpha>1 and beta<1:
+            expected=np.array([0,1])
+        else:
+            expected=np.array([0,1])
+            other=integrate(lambda t,z:competition(t,z,alpha,beta),[0.3,0.2],80)
+            assert np.max(np.abs(other.sol(80)-[1,0]))<1e-7
+            # On the exact symmetric separatrix, coexistence is possible but unstable.
+            diagonal=integrate(lambda t,z:competition(t,z,alpha,beta),[0.2,0.2],80)
+            assert np.max(np.abs(diagonal.sol(80)-[0.4,0.4]))<1e-7
+        assert np.max(np.abs(test.sol(80)-expected))<1e-7
+        equilibrium_checks[f"alpha={alpha},beta={beta}"]=test.sol(80).tolist()
+    for ax in axes[-1]:ax.set_xlabel("归一化数量 x")
+    for ax in axes[:,0]:ax.set_ylabel("归一化数量 y")
+    axes[0,0].legend(frameon=False,fontsize=7,loc="upper right")
+    save(fig,"competition.png")
+
+    mu,nu=0.4,0.3
+    def mutualism(t,z):
+        x,y=z
+        return [x*(1-x+mu*y), 0.8*y*(1-y+nu*x)]
+    eq=np.array([(1+mu)/(1-mu*nu),(1+nu)/(1-mu*nu)])
+    solution=integrate(mutualism,[0.2,0.3],40)
+    assert np.max(np.abs(mutualism(0,eq)))<1e-12
+    assert np.max(np.abs(solution.sol(40)-eq))<1e-7
+    # This is an actual ODE singularity, checked with an exact symmetric solution.
+    tb=math.log(26)
+    tstrong=np.linspace(0,0.96*tb,600)
+    strong=0.2*np.exp(tstrong)/(1-0.04*(np.exp(tstrong)-1))
+    def strong_rhs(t,z):
+        x,y=z
+        return [x*(1-x+1.2*y),y*(1-y+1.2*x)]
+    check=integrate(strong_rhs,[0.2,0.2],2)
+    exact_at_two=0.2*math.exp(2)/(1-0.04*(math.exp(2)-1))
+    assert np.max(np.abs(check.sol(2)-exact_at_two))<1e-8
+    tm=np.linspace(0,20,800)
+    values=solution.sol(tm)
+    fig,axes=plt.subplots(1,2,figsize=(7.8,3.4))
+    axes[0].plot(tm,values[0],color=BROWN,label="物种 x")
+    axes[0].plot(tm,values[1],color=PINK,label="物种 y")
+    axes[0].axhline(1,color="#aaa",ls=":",lw=0.8)
+    axes[0].set(title="互利 + 自我限制：本例稳定共存",xlabel="时间",ylabel="归一化数量",
+                ylim=(0,2))
+    axes[0].legend(frameon=False,fontsize=8,loc="lower right")
+    axes[1].plot(tstrong,strong,color=BLUE)
+    axes[1].axvline(tb,color=PINK,ls="--",lw=0.8)
+    axes[1].set(title="过强的线性互利：本例有限时发散",xlabel="时间",
+                ylabel="x = y",xlim=(0,3.55),ylim=(0,42))
+    save(fig,"mutualism.png")
+    return {"competition_endpoints":equilibrium_checks,
+            "mutualism_equilibrium":eq.tolist(),"strong_mutualism_blowup_time":tb}
+
+
 def main():
     def infection_peak(t, z):
         return BETA*z[0]-GAMMA
@@ -197,6 +276,7 @@ def main():
              "sir_invariant_drift":float(np.ptp(sir_invariant)),
              "lv_invariant_drift":float(np.ptp(h)),
              "euler_H_drift":float(drift[-1])}
+    metrics.update(interaction_families())
     (ROOT/"验证数据.json").write_text(json.dumps(metrics,ensure_ascii=False,indent=2)+"\n")
     print(json.dumps(metrics,ensure_ascii=False,indent=2))
     print("All conservation, peak, equilibrium, positivity and convergence checks passed.")

@@ -17,7 +17,7 @@
 \definecolor{paper}{HTML}{FBF4EA}
 \definecolor{inkc}{HTML}{3B2E24}
 \hypersetup{colorlinks=true,linkcolor=caramel,urlcolor=rosec,
- pdftitle={相遇之后：传染病与捕食者，从 SIR 到 Lotka-Volterra},pdfauthor={GPT}}
+ pdftitle={相遇之后：传染病与种群相互作用，从 SIR 到 Lotka-Volterra},pdfauthor={GPT}}
 \linespread{1.08}
 \setlength{\parskip}{0.25em}
 \setlist{itemsep=0.15em,topsep=0.3em}
@@ -32,7 +32,7 @@
  stringstyle=\color{rosec},breaklines=true,columns=fullflexible,
  keepspaces=true,showstringspaces=false,frame=single,rulecolor=\color{caramel!50},
  backgroundcolor=\color{paper},aboveskip=0.8em,belowskip=0.8em}
-\title{\bfseries 相遇之后：传染病与捕食者\\[0.35em]
+\title{\bfseries 相遇之后：传染病与种群相互作用\\[0.35em]
 \large 从 SIR 到 Lotka--Volterra 的微分方程模型}
 \author{数学建模笔记}
 \date{2026 年 10 月}
@@ -43,8 +43,9 @@
 一只捕食者遇到一只猎物，可能少掉一只猎物。
 看起来是两件相距很远的事，写成数学后，却都会出现“两个数量相乘”的项。
 
-这篇文章把传染病模型和 Lotka--Volterra 捕食者--猎物模型放在一起讲。
-先从箭头和数量收支建立方程，再看传播阈值、疫情峰值、种群振荡和相图。
+这篇文章把传染病模型和 Lotka--Volterra 相互作用模型放在一起讲。
+后者不只有捕食，还包括争夺资源的竞争、彼此帮助的互利合作。
+先从箭头和数量收支建立方程，再看传播阈值、疫情峰值，以及种群的振荡、共存与排斥。
 \textbf{不要求预先学过微积分}：进阶推导会标出来，可以先读图和文字。
 所有参数都是为说明数学而设的假想值，不对应某种疾病或某个真实生态系统。
 （本文由 GPT 写作）
@@ -257,6 +258,45 @@ $\dot E=\beta SI/N-\sigma E$，$\dot I=\sigma E-\gamma I$，其余两式相应�
 若还要考虑免疫衰减、新生人口、季节变化或分组接触，基础 SIR 就不能原样照用。
 尤其不能用一组固定参数的封闭 SIR 反复制造多轮波峰，却不解释新增的机制。
 
+\section{先看全家福：LV 不只有捕食}
+Lotka--Volterra（下文简称 LV）并不是只指“兔子与狐狸”那一对方程。
+更一般的两种群形式是
+\begin{equation}\label{eq:general-lv}
+\boxed{\begin{aligned}
+\dot X&=X(r_1+a_{11}X+a_{12}Y),\\
+\dot Y&=Y(r_2+a_{21}X+a_{22}Y).
+\end{aligned}}
+\end{equation}
+先读括号：它表示\textbf{平均到每个个体的增长速度}。
+例如 $\dot X/X$ 是单位时间的相对增长率；乘回 $X$，才是整个种群的变化速度。
+$r_1,r_2$ 是数量很少、没有另一物种影响时的内禀增长率，可以为正，也可以为负。
+$a_{11}X,a_{22}Y$ 描述自身数量的影响，负系数常用来表达拥挤和资源限制。
+
+真正区分相互作用类型的，是两个交叉系数：
+$a_{12}$ 表示 $Y$ 对 $X$ 的影响，$a_{21}$ 表示 $X$ 对 $Y$ 的影响。
+下标的顺序可以记成“后一个物种影响前一个物种”。
+\begin{center}
+\begin{tabular}{ccp{8.4cm}}
+\toprule
+$a_{12}$ & $a_{21}$ & 相互作用的含义\\\midrule
+负 & 正 & 捕食：$X$ 受损，$Y$ 获益\\
+负 & 负 & 竞争：双方都给对方的增长增加压力\\
+正 & 正 & 互利合作：双方都提高对方的增长率\\\bottomrule
+\end{tabular}
+\end{center}
+若交换捕食者与猎物的命名，捕食那一行的正负顺序也会交换。
+某个系数为零，则表示模型中没有设置那个方向的直接作用。
+这里的“合作”指种群层面的\textbf{互利}，不要求个体有合作意图。
+
+\begin{warnbox}[正负号说的是影响，不是此刻数量的涨跌]
+“竞争”不表示双方此刻都在减少，“互利”也不表示双方始终增加。
+正负号描述的是：固定其他条件，另一物种增加会怎样改变本物种的\emph{相对增长率}。
+此刻总的增长或减少，要看括号里所有项相加后的结果。
+\end{warnbox}
+
+接下来依次看捕食、竞争、互利三个版本。
+每个版本都要说明自身增长与资源限制；不能只改一个交叉项的符号，就把前一版本的结论全部照搬。
+
 \section{换一个舞台：兔子与狐狸为什么一多一少}
 现在让 $X(t)$ 表示猎物数量，$Y(t)$ 表示捕食者数量。
 用兔子和狐狸作比喻，但下面不是为真实兔狐数据拟合的模型。
@@ -408,7 +448,141 @@ Y_*^{\text{新}}=\frac ab\left(1-\frac{d}{cK}\right)>0.
 不熟悉这些词也不影响读图：\textbf{资源反馈改变了“偏离以后会不会缩回来”这件事}。
 更复杂的捕食饱和、时滞或季节项又可能产生其他行为，不能用一个例子概括所有扩展。
 
-\section{现在把两套模型放回同一张桌子}
+\section{竞争：争同一份资源，结局只有一方胜出吗}
+想象两种植物占据同一片空间。即使没有另一种植物，自己太多也会拥挤；
+另一种植物的增加，则会进一步挤占生长机会。一个常用的 LV 竞争模型是
+\[
+\dot X=r_1X\left(1-\frac{X+k_{12}Y}{K_1}\right),\qquad
+\dot Y=r_2Y\left(1-\frac{Y+k_{21}X}{K_2}\right),
+\]
+其中 $r_1,r_2,K_1,K_2,k_{12},k_{21}$ 都为正。
+$K_1,K_2$ 是各自\emph{单独存在时}的承载量。
+$k_{12}Y$ 把第二物种造成的压力，折算成对第一物种而言相当于多少本物种个体；
+$k_{21}X$ 同理。它们不要求相等。
+
+\subsection{先统一刻度，再比较竞争强弱}
+把数量换成各自承载量的倍数：$x=X/K_1,y=Y/K_2$。
+于是单独生存时，各自的正平衡都变成 $1$，模型简化为
+\begin{equation}\label{eq:competition}
+\boxed{\dot x=r_1x(1-x-\alpha y),\qquad
+\dot y=r_2y(1-y-\beta x),}
+\end{equation}
+其中 $\alpha=k_{12}K_2/K_1,\ \beta=k_{21}K_1/K_2$。
+\textbf{本节的 $\beta$ 是竞争系数，与 SIR 的传播参数没有关系。}
+$x=0.5$ 表示第一物种达到其单独承载量的一半，不是两个物种合起来的占比。
+
+怎么看谁能留下来？设 $y$ 已经独自在 $y=1$ 附近生活，
+这时引入一点点 $x$，它的相对增长率约为 $r_1(1-\alpha)$。
+所以 $\alpha<1$ 时，稀少的 $x$ 可以增长；$\alpha>1$ 时则难以建立。
+反过来，$x=1$ 附近稀少的 $y$ 能否增长，由 $\beta<1$ 决定。
+这种“先看稀少的一方能否进入”的办法，不必先把方程全部解出来。
+
+对于严格为正的初值，避开 $\alpha=1$ 或 $\beta=1$ 等临界情形，有四类结局：
+\begin{center}
+\small
+\begin{tabular}{p{2.7cm}p{3.2cm}p{7.9cm}}
+\toprule
+参数范围 & 稀少的一方能否增长 & 典型长期结局\\\midrule
+$\alpha<1,\beta<1$ & 双方都能 & 稳定共存；小扰动后能够返回\\
+$\alpha<1,\beta>1$ & 只有 $x$ 能 & $x$ 留下，$y$ 渐近趋零\\
+$\alpha>1,\beta<1$ & 只有 $y$ 能 & $y$ 留下，$x$ 渐近趋零\\
+$\alpha>1,\beta>1$ & 双方都不能 & 两个边界结局都能吸引附近状态；胜负取决于初值\\\bottomrule
+\end{tabular}
+\end{center}
+这里的“排斥”是连续模型里趋向零，不是说某一天最后一个个体必然消失。
+最后一行通常叫\textbf{双稳态}：系统有两个可吸引附近状态的结局。
+两个吸引区域之间还隔着一条特殊的分界轨道；恰好落在分界上的状态是例外。
+
+\subsection{能算出正平衡，不代表它会吸引轨道}
+令两个括号同时等于零，得到直线
+$x+\alpha y=1$ 和 $\beta x+y=1$。
+当 $1-\alpha\beta\ne0$ 时，交点为
+\[
+\boxed{x_* =\frac{1-\alpha}{1-\alpha\beta},\qquad
+ y_* =\frac{1-\beta}{1-\alpha\beta}.}
+\]
+若 $\alpha=\beta=0.5$，平衡是 $(2/3,2/3)$，附近轨道会靠拢。
+若 $\alpha=\beta=1.5$，也有正交点 $(0.4,0.4)$，却不是稳定共存：
+偏向一边，可能最终留下 $x$；偏向另一边，则可能最终留下 $y$。
+在图中 $r_1=r_2=1$ 的对称情形，直线 $x=y$ 正好就是分界。
+
+\begin{center}
+\includegraphics[width=0.93\linewidth]{images/competition.png}
+
+\small 四组竞争强度，均取 $r_1=r_2=1$。蓝色圆点为初值，轨道向各自的长期结局移动。
+虚线和点线是两条内部零增长线；右下图对角线上的特殊轨道趋向不稳定的内部平衡。
+\end{center}
+
+\begin{keybox}[为什么竞争也可能共存]
+在这里，稳定共存需要归一化后的 $\alpha<1$、$\beta<1$：
+双方对自己的限制，相比另一物种在其单独承载量时施加的限制，都足够强。
+只检查乘积 $\alpha\beta<1$ 不够，例如 $0.5\times1.5<1$，却是 $x$ 排斥 $y$。
+“有正平衡”“平衡稳定”“从某个初值会到哪里”是三个不同的问题。
+\end{keybox}
+
+\section{互利合作：帮助对方，也需要约束}
+现在把竞争的负面作用改成正面作用，同时保留自身拥挤带来的限制：
+\begin{equation}\label{eq:mutualism}
+\boxed{\dot x=r_1x(1-x+\mu y),\qquad
+\dot y=r_2y(1-y+\nu x),\qquad r_1,r_2,\mu,\nu>0.}
+\end{equation}
+$+\mu y$ 表示第二物种提高第一物种的相对增长率，$+\nu x$ 表示反向帮助。
+例如一种生物为另一种提供营养，另一种改善前者的生存环境，可以启发这样的写法；
+具体物种是否真的符合线性帮助，仍要由数据判断。
+
+这个版本中，每一方独自也能生存，因此描述的是\textbf{非专性互利}。
+如果离开伙伴便无法维持种群，就需要设置相应的负内禀增长率等机制，
+属于\textbf{专性互利}的其他版本，不能直接套用下面的平衡公式。
+
+\subsection{帮助适中：可以稳定在更高的数量}
+两个括号同时为零，即 $x=1+\mu y,\ y=1+\nu x$。
+当 $\mu\nu<1$ 时，得到正的共存平衡
+\[
+\boxed{x_* =\frac{1+\mu}{1-\mu\nu},\qquad
+ y_* =\frac{1+\nu}{1-\mu\nu}.}
+\]
+例如 $\mu=0.4,\nu=0.3$，则 $(x_*,y_*)\approx(1.591,1.477)$。
+取 $r_1=1,r_2=0.8$，从 $(0.2,0.3)$ 出发，图中的两个数量逐渐靠近这个平衡。
+超过 $1$ 并不矛盾：$1$ 是\emph{单独生活时}的承载尺度，合作改变了增长条件。
+
+可跳过的稳定性核验：在共存点，线性化矩阵的迹为
+$-r_1x_*-r_2y_*<0$，行列式为
+$r_1r_2x_*y_*(1-\mu\nu)>0$，所以这个平衡局部渐近稳定。
+直观上，小扰动会逐渐消退；这里的互利正反馈还压不过自身限制。
+
+\subsection{帮助过强：线性模型可能冲向无限大}
+如果帮助的强度永远随伙伴数量线性增加，就可能形成越来越强的正反馈。
+看一个能算清楚的例子：取 $r_1=r_2=1,\mu=\nu=1.2$，
+并从 $x(0)=y(0)=0.2$ 出发。由于完全对称，两者始终相等，记为 $z(t)$，于是
+\[
+\dot z=z(1+0.2z),\qquad
+z(t)=\frac{0.2e^t}{1-0.04(e^t-1)}.
+\]
+当 $t$ 从左侧逼近 $t_{\mathrm b}=\ln26\approx3.258$ 时，分母趋零，数量冲向无限大。
+这叫\textbf{有限时间发散}。公式在 $t_{\mathrm b}$ 之后的代数值不再是原初值问题的种群解。
+时间只是这个假想参数例子的单位，不能解释成真实生态系统的“三年爆炸”。
+
+\begin{center}
+\includegraphics[width=0.96\linewidth]{images/mutualism.png}
+
+\small 左：帮助适中，自身限制带来稳定共存。右：强互利的对称例子，竖虚线标出解析发散时间；
+曲线在发散前停止绘制。两图参数不同，不能只比较曲线的高低。
+\end{center}
+
+这次发散可以从精确公式得到，并非电脑步长不够小。
+它提醒我们：把局部适用的线性帮助无限外推，可能产生不合理的结局。
+一种改法是让帮助\textbf{饱和}，例如把 $\mu y$ 换成
+$\mu y/(1+hy)$，其中 $h>0$。当 $y$ 很大时，这个帮助项至多接近 $\mu/h$，
+而自身限制 $-x$ 仍会增大。若双方都作相应改动，就能抑制这类无上限的正反馈。
+
+\begin{warnbox}[合作的符号，不能代替完整的动力学分析]
+互利既可能稳定共存，也可能在过度简化的方程里失控。
+结果取决于自身限制、帮助强度、是否饱和、能否独立存活等具体假设。
+捕食模型的闭合轨道也不是整个 LV 家族共有的性质。
+\end{warnbox}
+
+\section{回到传染病：同样是相遇，为何结局不同}
+先把 SIR 与经典捕食版本作比较：
 \begin{center}
 \small
 \begin{tabular}{p{2.6cm}p{5.7cm}p{5.7cm}}
@@ -422,7 +596,7 @@ Y_*^{\text{新}}=\frac ab\left(1-\frac{d}{cK}\right)>0.
 相图中的障碍 & $S$ 单调减少，不能闭合循环 & 组合量 $H$ 守恒，形成闭轨\\\bottomrule
 \end{tabular}
 \end{center}
-这张表回答了文章开头的问题：两边都出现乘积项，并不代表会出现相同形状的曲线。
+这张表先回答了文章开头的一个问题：两边都出现乘积项，并不代表会出现相同形状的曲线。
 
 在基础 SIR 中，只要 $S,I>0$，就有 $\dot S<0$；
 状态不可能绕一圈后回到原来的 $S$，所以没有非平凡的闭合周期轨道。
@@ -432,6 +606,8 @@ Y_*^{\text{新}}=\frac ab\left(1-\frac{d}{cK}\right)>0.
 经典捕食者--猎物模型则有持续的反馈回路：
 猎物能繁殖，捕食者靠猎物得到支持，捕食压力又反过来限制猎物，随后压力减小。
 这不是人从 $S$ 经过 $I$ 最终留在 $R$ 的单向旅程。
+竞争与互利又展示了其他结局：归一化后的竞争强度决定共存、排斥或双稳态；
+互利能抬高稳定数量，也可能在帮助无上限的简化模型中导致发散。
 \textbf{决定结论的，不只是某个乘法符号，而是整套流动、补充与反馈结构。}
 
 \section{电脑也会画错：别把数值漂移当生态规律}
@@ -453,13 +629,14 @@ Y_{n+1}=Y_n+h(cX_nY_n-dY_n),
 这时“振幅越来越大”首先是数值方法的信号，不能直接当成生态机制。
 在 SIR 中，粗糙数值计算还可能给出负人数；事后把负数截成零会掩盖问题。
 
-随文的 \texttt{数值实验.py} 用 NumPy、SciPy 和 Matplotlib 生成五张图，
-并检查 SIR 总量守恒、峰值条件、最终规模方程、Lotka--Volterra 平衡与不变量，
+随文的 \texttt{数值实验.py} 用 NumPy、SciPy 和 Matplotlib 生成七张图，
+并检查 SIR 总量守恒、峰值条件、最终规模方程、捕食版本的平衡与不变量，
+以及竞争的四类结局、互利共存平衡和强互利的解析例子，
 还用更严格的积分精度比较结果。验证数据保存在 \texttt{验证数据.json} 中。
 图中文字采用 TeX Live 自带文鼎宋体，其他机器可通过 \texttt{CJK\_FONT} 指定字体文件。
 图像来自假想参数下的计算，没有把真实疫情或生态观测伪装成模拟结果。
 
-\begin{keybox}[读完后，可以自己做的三个小检查]
+\begin{keybox}[读完后，可以自己做的五个小检查]
 \begin{enumerate}
 \item 如果 $\mathcal R_0=3$，但易感者只占四分之一，此刻 $I$ 增还是减？
 有效再生数为 $3/4<1$，所以在 $I>0$ 时下降，并不代表新增感染立即变成零。
@@ -467,6 +644,10 @@ Y_{n+1}=Y_n+h(cX_nY_n-dY_n),
 $Y>10$，猎物减少；$X>25$，捕食者仍增加。
 \item 如果经典模型的相图越绕越外，先检查什么？
 先检查 $H$ 的数值漂移与步长收敛，再判断是不是确实改变了原模型。
+\item 竞争模型算出了正的内部平衡，是否就证明稳定共存？
+没有。$\alpha=\beta=1.5$ 的内部平衡也为正，却不能吸引附近的一般初值。
+\item 互利模型中的数量超过 $1$，是否一定算错了？
+不一定。这里 $1$ 是单独生活时的承载尺度；应进一步检查增长是否有界、帮助机制是否合理。
 \end{enumerate}
 \end{keybox}
 
@@ -481,6 +662,12 @@ $Y>10$，猎物减少；$X>25$，捕食者仍增加。
 Duke University 教学材料。可对照仓室模型与易感比例、传染比例之间的关系。
 \item \href{https://users.ssc.wisc.edu/~jdmontgomery/predatorprey.pdf}{Predator-Prey Models}，
 University of Wisconsin--Madison 课程讲义，第 17 章。讨论经典模型、资源限制与数值迭代的差别。
+\item \href{https://www.uwyo.edu/dbmcd/popecol/marlects/lect21.html}{Competition: Lotka--Volterra Model}，
+University of Wyoming 种群生态学课程材料。可对照竞争的四类结局与零增长线。
+\item W.~G.~Graves, B.~B.~Peckham, J.~Pastor，
+\href{https://www.d.umn.edu/~bpeckham/export/Papers/GPP_UMD_TR2006-2.pdf}{A 2D Differential Equations Model for Mutualism}，
+University of Minnesota Duluth 技术报告 TR 2006-2。
+讨论非专性与专性互利，以及使帮助作用饱和的建模方法。
 \end{itemize}
 \end{keybox}
 \end{document}
