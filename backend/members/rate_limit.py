@@ -18,6 +18,18 @@ ENDPOINTS = {
 FALLBACK_IDENTITY = "loopback-or-unknown-fallback"
 
 
+def consume_limit(key, limit, window):
+    """原子计数；过期后重新争取窗口，异常竞争时保守拒绝。"""
+    for _ in range(3):
+        if cache.add(key, 1, timeout=window):
+            return True
+        try:
+            return cache.incr(key) <= limit
+        except ValueError:
+            continue
+    return False
+
+
 def client_identity(request):
     try:
         peer = ip_address(request.META.get("REMOTE_ADDR", ""))
@@ -51,19 +63,7 @@ class AuthRateLimitMiddleware:
         ).hexdigest()
         key = f"auth-rate:{action}:{digest}"
 
-        count = limit + 1
-        # add/incr 分别原子执行；若恰好跨过过期时刻，重新争取新窗口。
-        # 连续失败则保守拒绝，避免重置其他请求已建立的计数。
-        for _ in range(3):
-            if cache.add(key, 1, timeout=window):
-                count = 1
-                break
-            try:
-                count = cache.incr(key)
-                break
-            except ValueError:
-                continue
-        if count <= limit:
+        if consume_limit(key, limit, window):
             return self.get_response(request)
 
         message = "注册尝试过于频繁，请稍后再试。" if action == "register" else "登录尝试过于频繁，请稍后再试。"

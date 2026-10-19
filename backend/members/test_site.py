@@ -5,7 +5,9 @@ from pathlib import Path
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase, override_settings
 
-from .management.commands.build_site import ROOT_PAGES, copy_site
+from django.core.management.base import CommandError
+
+from .management.commands.build_site import ROOT_PAGES, copy_site, prepare_questions_page
 
 
 class PrivateSiteTests(TestCase):
@@ -98,6 +100,47 @@ class PrivateSiteTests(TestCase):
 
 
 class SiteBuildTests(TestCase):
+    question_html = '''<head></head><main><div id="prologue">keep the character introduction</div>
+        <div id="qa" class="content"><section>GitHub-only intro
+        <div class="giscus"></div></section><div id="qaList"></div></div></main>
+        <script>
+        // =====================
+        // 问答区配置
+        const QA_CONFIG = {repo: 'test/repo'};
+        // 1. 获取菜单里的链接
+        const keepMenuHandler = true;
+        // =====================
+        // 问答区
+        // =====================
+        function ensureQA() { fetch("https://giscus.app/client.js"); }
+        </script>'''
+
+    def test_mint_replaces_github_widget_without_changing_static_source(self):
+        html = self.question_html
+        with tempfile.TemporaryDirectory() as temp:
+            source, target = Path(temp) / "source", Path(temp) / "target"
+            source.mkdir()
+            target.mkdir()
+            (source / "塞拉.html").write_text(html)
+            copy_site(source, target)
+            built = (target / "塞拉.html").read_text()
+            self.assertEqual((source / "塞拉.html").read_text(), html)
+            self.assertIn("keep the character introduction", built)
+            self.assertIn("keepMenuHandler", built)
+            self.assertIn("提问与回答", built)
+            self.assertIn("/static/members/questions.js", built)
+            self.assertIn("/static/members/questions.css", built)
+            self.assertNotIn("giscus", built)
+            self.assertNotIn("GitHub-only", built)
+            self.assertNotIn("QA_CONFIG", built)
+
+    def test_changed_question_structure_fails_instead_of_silently_using_github(self):
+        for html in ("<head></head><main>missing container</main>",
+                     self.question_html.replace('id="qa"', "id='qa'"),
+                     '<head></head><main><div id="qa" class="content">changed</div></main>'):
+            with self.subTest(html=html[:60]), self.assertRaises(CommandError):
+                prepare_questions_page(html)
+
     def test_only_frontend_files_copied_without_secrets_sources_symlinks(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
@@ -105,6 +148,7 @@ class SiteBuildTests(TestCase):
             source.mkdir()
             target.mkdir()
             files = {name: "<head></head><body>page</body>" for name in ROOT_PAGES}
+            files["塞拉.html"] = self.question_html
             files.update({
                 "站点内容.js": "snapshot", "miku/shime1.png": "sprite",
                 "webmeji-main/config.js": "config", "lib/three.min.js": "three",

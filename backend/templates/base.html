@@ -41,8 +41,9 @@
             {% if user.is_authenticated %}<a href="/主页.html">回到网站</a>{% endif %}
             {% if user.is_authenticated %}
                 <a href="{% url 'account' %}">我的小屋</a>
+                <a href="/塞拉.html#qa">提问与回答</a>
                 <a href="{% url 'password_change' %}">修改密码</a>
-                {% if user.is_staff %}<a href="{% url 'admin:index' %}">管理账号</a>{% endif %}
+                {% if user.is_staff %}<a href="{% url 'admin:index' %}">管理后台</a>{% endif %}
                 <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit">退出登录</button></form>
             {% else %}<a href="{% url 'login' %}">登录</a><a href="{% url 'register' %}">注册</a>{% endif %}
         </nav>

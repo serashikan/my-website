@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
-from .models import PrivateNote
+from .models import PrivateNote, Question
 
 
 class RegistrationForm(UserCreationForm):
@@ -20,3 +20,9 @@ class PrivateNoteForm(forms.ModelForm):
         widgets = {"text": forms.Textarea(attrs={
             "rows": 6, "maxlength": 1000, "placeholder": "写点想留给自己的话……",
         })}
+
+
+class QuestionForm(forms.ModelForm):
+    class Meta:
+        model = Question
+        fields = ["title", "body", "visibility"]

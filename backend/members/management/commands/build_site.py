@@ -1,5 +1,6 @@
 """把现有前端按白名单复制到受保护的部署目录，不改原网页。"""
 import json
+import re
 import shutil
 import tempfile
 from pathlib import Path
@@ -20,6 +21,35 @@ ASSET_EXTENSIONS = {
 }
 INJECTION = ('\n<link rel="stylesheet" href="/static/members/site-nav.css">'
              '\n<script defer src="/static/members/site-nav.js"></script>\n')
+QUESTIONS_INJECTION = ('\n<script>window.SERA_NATIVE_QUESTIONS = true;</script>'
+                       '\n<link rel="stylesheet" href="/static/members/questions.css">'
+                       '\n<script defer src="/static/members/questions.js"></script>\n')
+
+
+def prepare_questions_page(html):
+    """只转换 Mint 的生成副本，替换旧提问内容和初始化，不改静态版。"""
+    if 'id="qa"' not in html:
+        raise CommandError("塞拉页缺少问答容器，未生成部署副本。")
+    html, section_count = re.subn(
+        r'(<div id="qa" class="content">).*?(</div>\s*</main>)',
+        r'\1<section class="qa-intro"><h2 class="qa-h">提问与回答</h2>'
+        r'<p role="status">正在打开问答区……</p>'
+        r'<noscript>请启用 JavaScript 后在这里提交问题。</noscript></section>\2',
+        html, count=1, flags=re.S,
+    )
+    html, config_count = re.subn(
+        r'// ={5,}\s*// 问答区配置.*?// 1\. 获取菜单里的链接',
+        '// 1. 获取菜单里的链接', html, count=1, flags=re.S,
+    )
+    html, script_count = re.subn(
+        r'// ={5,}\s*// 问答区\s*// ={5,}.*?(?=</script>)',
+        'function ensureQA() {\n'
+        '    if (window.SeraQuestions) window.SeraQuestions.mount(document.getElementById("qa"));\n'
+        '}\n', html, count=1, flags=re.S,
+    )
+    if (section_count, config_count, script_count) != (1, 1, 1):
+        raise CommandError("塞拉页问答结构已变化，未替换已有部署目录，请先更新转换规则。")
+    return html.replace("</head>", QUESTIONS_INJECTION + "</head>", 1)
 
 
 def allowed(path):
@@ -56,6 +86,8 @@ def copy_site(source, target):
         destination.parent.mkdir(parents=True, exist_ok=True)
         if relative.name in ROOT_PAGES and len(relative.parts) == 1:
             html = file.read_text(encoding="utf-8")
+            if relative.name == "塞拉.html":
+                html = prepare_questions_page(html)
             destination.write_text(html.replace("</head>", INJECTION + "</head>", 1), encoding="utf-8")
         else:
             shutil.copy2(file, destination)
