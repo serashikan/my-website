@@ -13,6 +13,7 @@ class SiteLoginRequiredMiddleware:
         public_asset = request.path_info.startswith("/static/")
         public_page = request.path_info in {
             "/accounts/login/", "/accounts/register/", "/accounts/password_reset/", "/health/",
+            "/accounts/register/pending/", "/accounts/register/resend/", "/accounts/email/verify/",
         }
         if public_asset or public_page or request.user.is_authenticated:
             response = self.get_response(request)

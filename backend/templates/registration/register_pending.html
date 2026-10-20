@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}等待邮箱确认{% endblock %}
+{% block content %}
+<p class="eyebrow">CHECK YOUR MAILBOX</p>
+<h1>还差一次邮箱确认。</h1>
+{% if operation %}
+<p>用户名：{{ operation.username }}<br>待验证邮箱：{{ operation.target_email }}</p>
+{% if not operation.sent_at %}<p class="notice" role="status">验证邮件尚未发送成功。申请已保留，你可以输入注册密码后重发；账号尚未开通。</p>{% endif %}
+<p>账号尚未开通。请打开验证邮件，在确认页输入注册时设置的密码；邮件链接过期后需要重新申请。</p>
+<p class="helptext">如果没有收到邮件，请检查垃圾邮件。重发会使旧链接失效；发送失败时申请仍保留，页面会如实提示。</p>
+<form method="post" action="{% url 'register_resend' %}">
+    {% csrf_token %}
+    <p class="helptext">重发前，请再次输入注册时设置的密码。</p>
+    {{ form.as_p }}
+    <div class="actions"><button type="submit">重发验证邮件</button></div>
+</form>
+{% else %}
+<p>当前浏览器没有有效的待确认注册，或申请已过期。请重新填写注册资料。</p>
+<div class="actions"><a class="button" href="{% url 'register' %}">返回注册</a></div>
+{% endif %}
+<div class="actions"><a href="{% url 'login' %}">返回登录</a></div>
+{% endblock %}

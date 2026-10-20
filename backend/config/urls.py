@@ -13,6 +13,9 @@ urlpatterns = [
     path("api/questions/<int:pk>/", question_views.question_detail, name="question_detail"),
     path("accounts/login/", auth_views.LoginView.as_view(), name="login"),
     path("accounts/register/", views.register, name="register"),
+    path("accounts/register/pending/", views.register_pending, name="register_pending"),
+    path("accounts/register/resend/", views.register_resend, name="register_resend"),
+    path("accounts/email/verify/", views.email_verify, name="email_verify"),
     path("accounts/password_reset/", views.password_reset_help, name="password_reset"),
     path("accounts/logout/", auth_views.LogoutView.as_view(), name="logout"),
     path("accounts/password_change/", auth_views.PasswordChangeView.as_view(
@@ -20,5 +23,6 @@ urlpatterns = [
     path("accounts/password_change/done/", auth_views.PasswordChangeDoneView.as_view(),
          name="password_change_done"),
     path("account/", views.account, name="account"),
+    path("account/info/", views.account_info, name="account_info"),
     path("admin/", admin.site.urls),
 ]

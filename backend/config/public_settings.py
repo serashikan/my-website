@@ -22,7 +22,6 @@ CSRF_COOKIE_NAME = "__Host-sera_public_csrf"
 TRUST_CF_CONNECTING_IP = True
 AUTH_RATE_LIMITS = {"login": (30, 300), "register": (10, 3600)}
 MIDDLEWARE = [*MIDDLEWARE]  # noqa: F405
-MIDDLEWARE.insert(1, "members.rate_limit.AuthRateLimitMiddleware")
 # 限速缓存只属于该单 worker 的进程，重启会清空；不要直接增加 worker。
 CACHES = {"default": {
     "BACKEND": "django.core.cache.backends.locmem.LocMemCache",

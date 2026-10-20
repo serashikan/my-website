@@ -28,6 +28,10 @@ if [ -z "$host" ]; then
 fi
 printf 'DJANGO_PUBLIC_HOST=%s\n' "$host" > .local/public.env.new
 mv .local/public.env.new .local/public.env
+# 私有入口也会发验证邮件，重新加载本次可信的公网网址。
+if systemctl --user is-active --quiet sera-website.service; then
+    systemctl --user restart sera-website.service
+fi
 systemctl --user start sera-website-public.service
 attempt=0
 while [ "$attempt" -lt 60 ]; do

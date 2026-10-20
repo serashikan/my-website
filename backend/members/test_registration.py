@@ -1,12 +1,21 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
 from django.core import mail
-from django.test import Client, TestCase
+from django.test import Client, TestCase, override_settings
+from django.core.cache import cache
+from urllib.parse import unquote
+import re
 from django.urls import reverse
 
-from .models import PrivateNote
+from .models import AccountEmail, EmailOperation, PrivateNote
 
 
+@override_settings(
+    EMAIL_VERIFICATION_ENABLED=True, SITE_PUBLIC_URL="https://example.test",
+    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    EMAIL_VERIFICATION_COOLDOWN=0, EMAIL_VERIFICATION_MAX_PER_HOUR=50,
+    PASSWORD_HASHERS=["django.contrib.auth.hashers.MD5PasswordHasher"],
+)
 class PublicRegistrationTests(TestCase):
     """所有账号仅存在于临时测试数据库，不创建真实的演示账号。"""
 
@@ -19,9 +28,25 @@ class PublicRegistrationTests(TestCase):
         )
         PrivateNote.objects.create(owner=cls.existing, text="Existing readers private note")
 
+    def setUp(self):
+        cache.clear()
+
+    def tearDown(self):
+        cache.clear()
+
+    def confirm(self, client=None):
+        client = client or self.client
+        token = unquote(re.search(r"#token=([^\s<>]+)", mail.outbox[-1].body).group(1))
+        client.get(reverse("email_verify"))
+        return client.post(reverse("email_verify"), {
+            "token": token, "password": self.password,
+            "csrfmiddlewaretoken": client.cookies["csrftoken"].value,
+        })
+
     def registration_data(self, username="new-reader", **extra):
         return {
             "username": username,
+            "email": "test-only-new-reader@example.test",
             "password1": self.password,
             "password2": self.password,
             **extra,
@@ -33,7 +58,7 @@ class PublicRegistrationTests(TestCase):
         self.assertContains(response, f'href="{reverse("password_reset")}"')
         response = self.client.get(reverse("register"))
         self.assertEqual(response.status_code, 200)
-        for field in ("username", "password1", "password2"):
+        for field in ("username", "email", "password1", "password2"):
             self.assertContains(response, f'name="{field}"')
         self.assertIn("no-store", response.headers["Cache-Control"])
 
@@ -46,7 +71,7 @@ class PublicRegistrationTests(TestCase):
         self.assertEqual(get_user_model().objects.count(), count)
         self.assertNotIn("_auth_user_id", client.session)
 
-    def test_valid_registration_hashes_password_and_logs_in_without_extra_privileges(self):
+    def test_registration_opens_account_only_after_password_and_email_confirmation(self):
         group = Group.objects.create(name="test-only-privileged-group")
         permission = Permission.objects.get(
             content_type__app_label="auth", codename="change_user",
@@ -58,10 +83,16 @@ class PublicRegistrationTests(TestCase):
             is_staff="on", is_superuser="on", is_active="",
             groups=[group.pk], user_permissions=[permission.pk],
         ))
-        self.assertRedirects(response, reverse("account"))
+        self.assertRedirects(response, reverse("register_pending"))
+        self.assertFalse(get_user_model().objects.filter(username="new-reader").exists())
+        self.assertNotIn("_auth_user_id", client.session)
+        self.assertEqual(EmailOperation.objects.get().status, EmailOperation.Status.PENDING)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertRedirects(self.confirm(client), reverse("account"))
         user = get_user_model().objects.get(username="new-reader")
         self.assertTrue(user.check_password(self.password))
         self.assertNotEqual(user.password, self.password)
+        self.assertIsNotNone(AccountEmail.objects.get(user=user).verified_at)
         self.assertTrue(user.is_active)
         self.assertFalse(user.is_staff)
         self.assertFalse(user.is_superuser)
@@ -109,6 +140,7 @@ class PublicRegistrationTests(TestCase):
 
     def test_new_user_cannot_read_or_overwrite_existing_users_note(self):
         self.client.post(reverse("register"), self.registration_data())
+        self.confirm()
         user = get_user_model().objects.get(username="new-reader")
         response = self.client.get(reverse("account"))
         self.assertNotContains(response, "Existing readers private note")
@@ -127,7 +159,7 @@ class PublicRegistrationTests(TestCase):
             reverse("register") + "?next=https%3A%2F%2Fexample.com%2F",
             self.registration_data(next="https://example.com/"),
         )
-        self.assertRedirects(response, reverse("account"))
+        self.assertRedirects(response, reverse("register_pending"))
 
 
 class PasswordHelpTests(TestCase):

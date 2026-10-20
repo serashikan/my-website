@@ -55,6 +55,23 @@ class AuthRateLimitTests(SimpleTestCase):
         self.assertEqual(response.headers["Retry-After"], "30")
         self.assertContains(response, "注册尝试过于频繁", status_code=429)
 
+    @override_settings(AUTH_RATE_LIMITS={
+        "email_send": (1, 60), "email_verify": (2, 60), "email_account": (2, 60),
+    })
+    def test_email_routes_are_throttled_before_mail_and_password_work(self):
+        for path, allowed in (
+            ("/accounts/register/resend/", 1),
+            ("/accounts/email/verify/", 2),
+            ("/account/info/", 2),
+        ):
+            with self.subTest(path=path):
+                for _ in range(allowed):
+                    self.assertEqual(self.request(path).status_code, 200)
+                response = self.request(path)
+                self.assertEqual(response.status_code, 429)
+                self.assertEqual(response.headers["Retry-After"], "60")
+                self.assertContains(response, "邮箱操作过于频繁", status_code=429)
+
     def test_get_and_unrelated_post_requests_do_not_consume_limits(self):
         for path in ("/accounts/login/", "/admin/login/", "/accounts/register/"):
             for _ in range(4):

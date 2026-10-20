@@ -3,12 +3,13 @@
 {% block content %}
 <p class="eyebrow">A ROOM OF YOUR OWN</p>
 <h1>给自己留一个小地方。</h1>
-<p>设置用户名和密码，注册后就可以进入你的小屋。</p>
+<p>设置用户名、密码和邮箱。打开验证邮件并输入注册密码确认后，账号才会开通。</p>
+{% if not mail_ready %}<p class="notice" role="status">邮箱验证暂未配置完成，注册暂不可用。请稍后再来或联系站主。</p>{% endif %}
 <form method="post">
     {% csrf_token %}
     {{ form.as_p }}
     <div class="actions">
-        <button type="submit">注册并进入小屋</button>
+        <button type="submit"{% if not mail_ready %} disabled{% endif %}>注册并发送验证邮件</button>
         <a href="{% url 'login' %}">已有账号？登录</a>
     </div>
 </form>

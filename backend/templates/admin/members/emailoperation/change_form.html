@@ -1,0 +1,10 @@
+{% extends "admin/change_form.html" %}
+{% block submit_buttons_bottom %}
+{% if can_review_email %}
+<div class="submit-row">
+    <p>新邮箱已经完成收信验证。通过后才会替换原邮箱；拒绝则保留原邮箱。</p>
+    <input type="submit" name="_approve_email" value="通过邮箱变更" class="default">
+    <input type="submit" name="_reject_email" value="拒绝邮箱变更">
+</div>
+{% endif %}
+{% endblock %}

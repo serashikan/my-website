@@ -11,6 +11,10 @@
     room.href = "/account/";
     room.textContent = "我的小屋";
     nav.append(room);
+    const account = document.createElement("a");
+    account.href = "/account/info/";
+    account.textContent = "账户信息";
+    nav.append(account);
 
     fetch("/api/session/", { credentials: "same-origin", cache: "no-store" })
         .then(response => {

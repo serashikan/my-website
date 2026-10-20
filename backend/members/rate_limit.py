@@ -9,11 +9,17 @@ from django.utils.cache import patch_cache_control
 from django.utils.crypto import salted_hmac
 
 
-DEFAULT_LIMITS = {"login": (30, 300), "register": (10, 3600)}
+DEFAULT_LIMITS = {
+    "login": (30, 300), "register": (10, 3600),
+    "email_send": (10, 3600), "email_verify": (20, 300), "email_account": (20, 300),
+}
 ENDPOINTS = {
     "/accounts/login/": "login",
     "/admin/login/": "login",
     "/accounts/register/": "register",
+    "/accounts/register/resend/": "email_send",
+    "/accounts/email/verify/": "email_verify",
+    "/account/info/": "email_account",
 }
 FALLBACK_IDENTITY = "loopback-or-unknown-fallback"
 
@@ -66,7 +72,12 @@ class AuthRateLimitMiddleware:
         if consume_limit(key, limit, window):
             return self.get_response(request)
 
-        message = "注册尝试过于频繁，请稍后再试。" if action == "register" else "登录尝试过于频繁，请稍后再试。"
+        if action == "register":
+            message = "注册尝试过于频繁，请稍后再试。"
+        elif action.startswith("email_"):
+            message = "邮箱操作过于频繁，请稍后再试。"
+        else:
+            message = "登录尝试过于频繁，请稍后再试。"
         response = HttpResponse(message, status=429, content_type="text/plain; charset=utf-8")
         response["Retry-After"] = str(window)
         patch_cache_control(response, private=True, no_store=True, no_cache=True, max_age=0)

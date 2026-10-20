@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}账户信息{% endblock %}
+{% block content %}
+<p class="eyebrow">YOUR ACCOUNT</p>
+<h1>账户信息</h1>
+<p>用户名：{{ user.username }}</p>
+{% if saved_email %}
+<p>当前邮箱：{{ saved_email.email }}<br>验证状态：{% if saved_email.verified_at %}已验证{% else %}未验证{% endif %}</p>
+{% else %}<p>当前邮箱：尚未填写。</p>{% endif %}
+<div class="actions"><a href="{% url 'password_change' %}">修改密码</a><a href="{% url 'password_reset' %}">忘记密码？联系站主</a></div>
+{% if pending %}
+<hr>
+<h2>待处理的邮箱申请</h2>
+{{ email_form.errors }}
+<p>申请邮箱：{{ pending.target_email }}<br>状态：{{ pending.get_status_display }}</p>
+{% if pending.status == 'awaiting_review' %}
+<p>新邮箱已验证，正在等待站主审核。审核通过前，当前邮箱保持不变。</p>
+{% else %}
+{% if not pending.sent_at %}<p class="notice">验证邮件尚未发送成功。申请已保留，请稍后重发；当前邮箱没有改变。</p>
+{% else %}<p>请打开邮件完成验证。重发会使旧链接失效。</p>{% endif %}
+{% endif %}
+<p class="helptext">如需换成另一个地址，请先取消这次申请，再重新填写。</p>
+<form method="post">
+    {% csrf_token %}
+    {{ operation_form.as_p }}
+    <div class="actions">
+        {% if pending.status == 'pending' %}<button type="submit" name="action" value="resend">重发验证邮件</button>{% endif %}
+        <button type="submit" name="action" value="cancel">取消这次申请</button>
+    </div>
+</form>
+{% else %}
+<hr>
+<h2>{% if saved_email %}验证或更换邮箱{% else %}补填邮箱{% endif %}</h2>
+<p>首次补填邮箱，或验证当前相同地址，确认后即可生效。更换到新地址，需先完成新邮箱验证，再由站主审核。</p>
+{% if not mail_ready %}<p class="notice">邮箱验证暂未配置完成，请稍后重试或联系站主。</p>{% endif %}
+<form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="request">
+    {{ email_form.as_p }}
+    <div class="actions"><button type="submit"{% if not mail_ready %} disabled{% endif %}>发送验证邮件</button></div>
+</form>
+{{ operation_form.non_field_errors }}
+{% endif %}
+{% endblock %}

@@ -33,6 +33,7 @@
         footer { text-align: center; color: #9c8a76; font-size: 13px; padding: 24px; }
         @media (max-width: 480px) { main { margin: 28px auto; padding: 0 16px; } .bar { padding: 16px; } }
     </style>
+    {% block extra_head %}{% endblock %}
 </head>
 <body>
     <header><div class="bar">
@@ -42,7 +43,7 @@
             {% if user.is_authenticated %}
                 <a href="{% url 'account' %}">我的小屋</a>
                 <a href="/塞拉.html#qa">提问与回答</a>
-                <a href="{% url 'password_change' %}">修改密码</a>
+                <a href="{% url 'account_info' %}">账户信息</a>
                 {% if user.is_staff %}<a href="{% url 'admin:index' %}">管理后台</a>{% endif %}
                 <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit">退出登录</button></form>
             {% else %}<a href="{% url 'login' %}">登录</a><a href="{% url 'register' %}">注册</a>{% endif %}

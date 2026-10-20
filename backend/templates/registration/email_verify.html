@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}确认邮箱{% endblock %}
+{% block extra_head %}
+<meta name="referrer" content="no-referrer">
+<script defer src="{% static 'members/email-verify.js' %}"></script>
+{% endblock %}
+{% block content %}
+<p class="eyebrow">CONFIRM YOUR EMAIL</p>
+<h1>确认这次邮箱申请。</h1>
+<p>仅打开链接不会完成验证。请输入注册时设置的密码或当前账号密码，再确认提交。</p>
+{% if user.is_authenticated %}<p>当前登录账号：{{ user.username }}。请确认它与这次申请一致；不同账号不能使用此链接。</p>{% endif %}
+<form method="post" id="email-verification-form">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    {{ form.token }}{{ form.token.errors }}
+    {{ form.password.label_tag }}{{ form.password }}{{ form.password.errors }}
+    <p id="email-token-status" role="status"></p>
+    <div class="actions"><button type="submit">确认邮箱</button></div>
+</form>
+<noscript><p>请启用 JavaScript 后重新打开邮件链接，以安全读取确认信息。</p></noscript>
+{% endblock %}

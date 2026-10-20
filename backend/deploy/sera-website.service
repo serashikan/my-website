@@ -6,6 +6,7 @@ After=network.target
 Type=simple
 WorkingDirectory=%h/sera-account-lab
 Environment=DJANGO_DEBUG=0
+EnvironmentFile=-%h/sera-account-lab/.local/mail.env
 ExecStart=%h/sera-account-lab/.venv/bin/gunicorn --config gunicorn.conf.py config.wsgi:application
 Restart=on-failure
 RestartSec=5

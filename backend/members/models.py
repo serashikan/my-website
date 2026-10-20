@@ -1,6 +1,10 @@
+import uuid
+
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
+
+from .email_addresses import normalize_email
 
 
 class PrivateNote(models.Model):
@@ -45,3 +49,77 @@ class Question(models.Model):
                 raise ValidationError({"is_public": "提问者选择了仅站主可见，不能公开展示。"})
             if not self.answer.strip():
                 raise ValidationError({"is_public": "请先填写回复，再审核展示。"})
+
+
+class AccountEmail(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+                               related_name="account_email", verbose_name="账号")
+    email = models.EmailField("邮箱", max_length=254, unique=True, db_collation="nocase")
+    verified_at = models.DateTimeField("验证时间", null=True, blank=True)
+    updated_at = models.DateTimeField("更新时间", auto_now=True)
+
+    class Meta:
+        verbose_name = "账号邮箱"
+        verbose_name_plural = "账号邮箱"
+
+    def save(self, *args, **kwargs):
+        self.email = normalize_email(self.email)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return str(self.user)
+
+
+class EmailOperation(models.Model):
+    class Kind(models.TextChoices):
+        REGISTRATION = "registration", "注册验证"
+        FIRST_EMAIL = "first_email", "首次绑定"
+        CHANGE_EMAIL = "change_email", "更换邮箱"
+        VERIFY_EMAIL = "verify_email", "验证已有邮箱"
+
+    class Status(models.TextChoices):
+        PENDING = "pending", "等待验证"
+        AWAITING_REVIEW = "awaiting_review", "等待管理员审批"
+        COMPLETED = "completed", "已完成"
+        REJECTED = "rejected", "已拒绝"
+        CANCELLED = "cancelled", "已取消"
+        EXPIRED = "expired", "已过期"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    kind = models.CharField("操作类型", max_length=20, choices=Kind.choices)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+                             related_name="email_operations", null=True, blank=True)
+    username = models.CharField("用户名", max_length=150, blank=True)
+    username_key = models.CharField(max_length=450, blank=True)
+    password_hash = models.CharField(max_length=256, blank=True)
+    target_email = models.EmailField("新邮箱", max_length=254, db_collation="nocase")
+    previous_email = models.EmailField("原邮箱", max_length=254, blank=True)
+    status = models.CharField("状态", max_length=20, choices=Status.choices, default=Status.PENDING)
+    token_digest = models.CharField(max_length=64, blank=True, db_index=True)
+    expires_at = models.DateTimeField("有效期至", db_index=True)
+    created_at = models.DateTimeField("申请时间", auto_now_add=True)
+    sent_at = models.DateTimeField("发信时间", null=True, blank=True)
+    verified_at = models.DateTimeField("新邮箱验证时间", null=True, blank=True)
+    reviewed_at = models.DateTimeField("审批时间", null=True, blank=True)
+    reviewed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+                                    related_name="reviewed_email_operations", null=True, blank=True)
+
+    class Meta:
+        verbose_name = "邮箱申请"
+        verbose_name_plural = "邮箱申请"
+        ordering = ["-created_at"]
+        permissions = [("approve_email_change", "可以审批账号邮箱变更")]
+        constraints = [
+            models.UniqueConstraint(fields=["target_email"],
+                condition=models.Q(status__in=["pending", "awaiting_review"]),
+                name="unique_active_email_target"),
+            models.UniqueConstraint(fields=["user"],
+                condition=models.Q(status__in=["pending", "awaiting_review"]),
+                name="unique_active_email_user"),
+            models.UniqueConstraint(fields=["username_key"],
+                condition=models.Q(kind="registration", status__in=["pending", "awaiting_review"]),
+                name="unique_pending_signup_username"),
+        ]
+
+    def __str__(self):
+        return f"{self.get_kind_display()} · {self.get_status_display()}"
