@@ -1,0 +1,5 @@
+.casino-account-panel { display:flex; flex-wrap:wrap; gap:12px; align-items:center; padding:14px 18px; margin:0 0 18px; border:1px solid #d7b879; border-radius:12px; background:#fff7df; color:#634629; font:14px/1.6 system-ui,sans-serif; }
+.casino-account-panel span { flex:1 1 240px; }
+.casino-account-panel button { padding:8px 14px; border:1px solid #a57a3a; border-radius:8px; background:#fffdf7; color:#634629; font:inherit; cursor:pointer; }
+.casino-account-panel button:focus-visible { outline:3px solid #d989b0; outline-offset:3px; }
+.casino[inert] { opacity:.55; }

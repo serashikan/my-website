@@ -173,4 +173,6 @@ class SiteBuildTests(TestCase):
                          "txt文件/article.md", "floriography 2/data/flowers.js"]:
                 self.assertIn(name, manifest)
             self.assertIn("/static/members/site-nav.js", (target / "主页.html").read_text())
+            self.assertIn("/static/members/casino-account.js", (target / "技术.html").read_text())
+            self.assertNotIn("casino-account.js", (source / "技术.html").read_text())
             self.assertNotIn("site-nav.js", (source / "主页.html").read_text())

@@ -24,6 +24,8 @@ INJECTION = ('\n<link rel="stylesheet" href="/static/members/site-nav.css">'
 QUESTIONS_INJECTION = ('\n<script>window.SERA_NATIVE_QUESTIONS = true;</script>'
                        '\n<link rel="stylesheet" href="/static/members/questions.css">'
                        '\n<script defer src="/static/members/questions.js"></script>\n')
+CASINO_INJECTION = ('\n<link rel="stylesheet" href="/static/members/casino-account.css">'
+                    '\n<script src="/static/members/casino-account.js"></script>\n')
 
 
 def prepare_questions_page(html):
@@ -88,6 +90,8 @@ def copy_site(source, target):
             html = file.read_text(encoding="utf-8")
             if relative.name == "塞拉.html":
                 html = prepare_questions_page(html)
+            if relative.name == "技术.html":
+                html = html.replace("</head>", CASINO_INJECTION + "</head>", 1)
             destination.write_text(html.replace("</head>", INJECTION + "</head>", 1), encoding="utf-8")
         else:
             shutil.copy2(file, destination)

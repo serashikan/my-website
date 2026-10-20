@@ -8,7 +8,8 @@ class LegacyEmailMigrationTests(TransactionTestCase):
 
     def test_existing_addresses_are_reserved_but_not_claimed_as_verified(self):
         executor = MigrationExecutor(connection)
-        target = next(node for node in executor.loader.graph.leaf_nodes("members") if node[1].startswith("0003"))
+        latest = executor.loader.graph.leaf_nodes("members")
+        target = ("members", "0003_account_email")
         old_target = ("members", "0002_question")
         executor.migrate([old_target])
         try:
@@ -31,4 +32,4 @@ class LegacyEmailMigrationTests(TransactionTestCase):
             self.assertFalse(Binding.objects.filter(user_id=reader.pk).exists())
             self.assertEqual(Note.objects.get(owner_id=owner.pk).text, "Keep my original note")
         finally:
-            MigrationExecutor(connection).migrate([target])
+            MigrationExecutor(connection).migrate(latest)

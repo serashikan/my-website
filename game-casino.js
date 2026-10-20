@@ -2,29 +2,36 @@
   'use strict';
   const key='sera-casino-challenge-v2',TARGET=100000;
   function freshChallenge(attempt=0){return {id:null,status:'ready',chips:100,rounds:0,history:[],high:100,attempt,pending:null,started:null};}
-  let state=freshChallenge();
-  try { const s=JSON.parse(localStorage.getItem(key)); if(s&&Number.isSafeInteger(s.chips)&&s.chips>=0&&['ready','active','won','lost'].includes(s.status))state={...freshChallenge(),...s,history:Array.isArray(s.history)?s.history.slice(0,12):[]}; } catch (_) {}
+  const account=window.CasinoAccount,storage=account?account.storage:localStorage;
+  let state=freshChallenge(),mountGeneration=0;
+  function loadState(){
+    state=freshChallenge();
+  try { const s=JSON.parse(storage.getItem(key)); if(s&&Number.isSafeInteger(s.chips)&&s.chips>=0&&['ready','active','won','lost'].includes(s.status))state={...freshChallenge(),...s,history:Array.isArray(s.history)?s.history.slice(0,12):[]}; } catch (_) {}
   // 未结算下注已在开局扣除；刷新后按弃局处理，不能靠刷新退回押金。
-  if(state.pending){state.history.unshift(state.pending.game+' 弃局 -'+state.pending.amount);state.rounds++;state.pending=null;save();}
-  function save(){try{localStorage.setItem(key,JSON.stringify(state));}catch(_){} }
+  if(state.pending){state.history.unshift(state.pending.game+' 弃局 -'+state.pending.amount);state.rounds++;state.pending=null;state.history=state.history.slice(0,12);save();}
+  }
+  if(!account)loadState();
+  function save(){try{storage.setItem(key,JSON.stringify(state));}catch(_){} }
   let root, table, child, generation=0, stake=10, pending=0,stageTimers=[],currentGame='blackjack';
-  function marbleAssets(){try{const s=JSON.parse(localStorage.getItem('sera-marbles-v1'));return s&&s.challengeId===state.id?(s.inventory||0)+(s.queue||0)+(Array.isArray(s.balls)?s.balls.length:0):0;}catch(_){return 0;}}
+  function marbleAssets(){try{const s=JSON.parse(storage.getItem('sera-marbles-v1'));return s&&s.challengeId===state.id?(s.inventory||0)+(s.queue||0)+(Array.isArray(s.balls)?s.balls.length:0):0;}catch(_){return 0;}}
   function evaluate(){if(state.status!=='active')return;state.high=Math.max(state.high,state.chips);if(state.chips>=TARGET)state.status='won';else if(state.chips===0&&!state.pending&&marbleAssets()===0)state.status='lost';save();}
   const games=[['blackjack','♠','二十一点','要牌、停牌，与庄家较量'],['roulette','◎','欧洲轮盘','单零轮盘 · 红黑与单号'],['baccarat','♦','百家乐','押庄、闲或和'],['sicbo','⚄','骰宝','三骰大小 · 围骰通杀'],['slots','✦','老虎机','三转轴 · 水果与幸运七'],['marbles','◉','深井弹珠','六层钉阵 · 一币一珠'],['ten','♥','十点半','熟悉的半点纸牌桌'],['vault','◇','金库承保','签下保单，等待巡检'],['yacht','⚅','快艇骰子','双人休闲 / 庄家对战']];
   function balance(){if(!root)return;root.querySelector('.casino-bank').textContent=state.chips.toLocaleString();root.querySelector('.casino-count').textContent=state.rounds+' 局已结算'+(state.pending?' · 已锁定 '+state.pending.amount.toLocaleString():'');root.querySelector('.casino-history').textContent=state.history.join('  ·  ')||'今晚的第一局，从这里开始。';root.querySelector('.casino-progress span').style.width=Math.min(100,state.high/TARGET*100)+'%';root.querySelector('.casino-progress').setAttribute('aria-valuenow',state.high);root.querySelector('.casino-attempt').textContent='第 '+Math.max(1,state.attempt)+' 次挑战 · 最高 '+state.high.toLocaleString();root.querySelectorAll('[data-milestone]').forEach(el=>el.classList.toggle('achieved',state.high>=Number(el.dataset.milestone)));const end=root.querySelector('.casino-end');end.hidden=!['won','lost'].includes(state.status);end.querySelector('p').textContent=state.status==='won'?'挑战完成！你从 100 筹码走到了 100,000。':'筹码和剩余弹珠都已耗尽。本次挑战结束，最高到达 '+state.high.toLocaleString()+' 筹码。';}
   function record(text){state.rounds++;state.history.unshift(String(text));state.history=state.history.slice(0,12);evaluate();save();balance();}
-  function beginWager(game,amount){if(state.status!=='active'||state.pending||!Number.isSafeInteger(amount)||amount<1||amount>state.chips)return null;const id=Date.now().toString(36)+Math.random().toString(36).slice(2);state.chips-=amount;state.pending={id,game,amount};save();balance();return id;}
+  function beginWager(game,amount){if((account&&!account.canPlay)||state.status!=='active'||state.pending||!Number.isSafeInteger(amount)||amount<1||amount>state.chips)return null;const id=Date.now().toString(36)+Math.random().toString(36).slice(2);state.chips-=amount;state.pending={id,game,amount};save();balance();return id;}
   function finishWager(id,returned,text){if(!state.pending||state.pending.id!==id||!Number.isSafeInteger(returned)||returned<0)return false;const wager=state.pending;state.pending=null;state.chips+=returned;const delta=returned-wager.amount;record(text||wager.game+' '+(delta>=0?'+':'')+delta);return true;}
   function abandon(){if(state.pending)finishWager(state.pending.id,0,state.pending.game+' 弃局 -'+state.pending.amount);pending=0;}
   function settle(name,returned){const amount=pending;pending=0;finishWager(state.pending?.id,returned);return returned-amount;}
-  window.CasinoWallet={get chips(){return state.chips;},get challengeId(){return state.id;},get canPlay(){return state.status==='active';},get activeWager(){return state.pending;},begin:beginWager,finish:finishWager,check(){evaluate();balance();},change(delta){if(state.status!=='active'||!Number.isSafeInteger(delta)||state.chips+delta<0)return false;state.chips+=delta;if(delta>0){state.high=Math.max(state.high,state.chips);if(state.chips>=TARGET)state.status='won';}save();balance();return true;},record};
-  function stop(){generation++;stageTimers.forEach(clearTimeout);stageTimers=[];if(child)child.stop();child=null;abandon();}
+  window.CasinoWallet={get chips(){return state.chips;},get challengeId(){return state.id;},get canPlay(){return state.status==='active'&&(!account||account.canPlay);},get activeWager(){return state.pending;},begin:beginWager,finish:finishWager,check(){evaluate();balance();},change(delta){if((account&&!account.canPlay)||state.status!=='active'||!Number.isSafeInteger(delta)||state.chips+delta<0)return false;state.chips+=delta;if(delta>0){state.high=Math.max(state.high,state.chips);if(state.chips>=TARGET)state.status='won';}save();balance();return true;},record};
+  function stopGame(){generation++;stageTimers.forEach(clearTimeout);stageTimers=[];if(child)child.stop();child=null;abandon();}
+  function stop(){mountGeneration++;stopGame();if(account)account.flush();}
+  if(account)account.setPause(stopGame);
   function stageSchedule(fn,ms){const timer=setTimeout(()=>{stageTimers=stageTimers.filter(t=>t!==timer);fn();},ms);stageTimers.push(timer);}
   const rnd=n=>Math.floor(Math.random()*n);
   function card(){const r=rnd(13)+1;return {label:['','A','2','3','4','5','6','7','8','9','10','J','Q','K'][r]+['♠','♥','♦','♣'][rnd(4)],v:Math.min(r,10),ace:r===1};}
   function total(hand){let n=hand.reduce((s,c)=>s+(c.ace?11:c.v),0),a=hand.filter(c=>c.ace).length;while(n>21&&a--)n-=10;return n;}
   function showCards(hand){return hand.map(c=>'<span class="casino-card">'+c.label+'</span>').join('');}
-  async function open(id){stop();currentGame=id;balance();const token=generation;root.querySelectorAll('[data-game]').forEach(b=>b.classList.toggle('selected',b.dataset.game===id));const g=games.find(g=>g[0]===id);table.innerHTML='<h2>'+g[1]+' '+g[2]+'</h2>';
+  async function open(id){stopGame();currentGame=id;balance();const token=generation;root.querySelectorAll('[data-game]').forEach(b=>b.classList.toggle('selected',b.dataset.game===id));const g=games.find(g=>g[0]===id);table.innerHTML='<h2>'+g[1]+' '+g[2]+'</h2>';
     if(id==='marbles'||id==='vault'){
       const src=id==='marbles'?'game-marbles.js':'game-vault.js',url=new URL(src,document.baseURI).href;
       try{if(!window.SiteGames[url])await new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=reject;document.head.appendChild(s);});if(token!==generation)return;child=window.SiteGames[url];child.init(table);child.start();}catch(_){if(token===generation)table.innerHTML+='<p>机台加载失败，请重新打开。</p>';}
@@ -76,24 +83,30 @@
     };
   }
   function showOpening(){
-    stop();evaluate();balance();
+    stopGame();evaluate();balance();
     const status=state.status==='active'
       ? {label:'继续挑战 · 进入赌场',message:'已有进度：'+state.chips.toLocaleString()+' 筹码，最高 '+state.high.toLocaleString()+'。'}
       : {label:state.status==='ready'?'接受挑战 · 开始':'再挑战一次 · 100 筹码起步',message:state.status==='ready'?'灯光就位，今晚的挑战即将开始。':'新的挑战将从 100 筹码重新起步。'};
     root.querySelector('.casino-lobby').hidden=true;
-    window.CasinoOpening.show(root,{status,schedule:stageSchedule,onStart(){
+    window.CasinoOpening.show(root,{status,username:account?.username,schedule:stageSchedule,onStart(){
       if(state.status!=='active'){state=freshChallenge(state.attempt+1);state.id=Date.now().toString(36)+Math.random().toString(36).slice(2);state.status='active';state.started=Date.now();save();}
       evaluate();balance();
     },onReveal(){root.querySelector('.casino-lobby').hidden=false;open(currentGame);}});
   }
-  function init(container){
-    stop();
+  function mount(container){
+    stopGame();
     container.innerHTML='<section class="casino">'+window.CasinoOpening.html()+'<div class="casino-lobby" hidden><header class="casino-header"><div><small>SERA & MILU · THE HUNDRED CHIP CHALLENGE</small><h1>一百筹码之夜</h1><p>100 起步，100,000 通关。每一次选择，都是今晚的下一幕。</p><span class="casino-attempt"></span></div><div class="casino-wallet"><small>可用筹码</small><strong class="casino-bank"></strong><small class="casino-count"></small><button class="casino-rules">主持人 · 挑战规则</button></div></header><div class="casino-challenge"><div class="casino-challenge-top"><b>挑战进度</b><span>目标 100,000</span></div><div class="casino-progress" role="progressbar" aria-label="最高筹码进度" aria-valuemin="0" aria-valuemax="100000"><span></span></div><div class="casino-milestones">'+[1000,10000,50000,100000].map(n=>'<span data-milestone="'+n+'">'+n.toLocaleString()+'</span>').join('')+'</div></div><div class="casino-end" hidden><p></p><button class="casino-restart">回到舞台 · 再挑战一次</button></div><nav class="casino-nav">'+games.map(g=>'<button data-game="'+g[0]+'"><span>'+g[1]+'</span><b>'+g[2]+'</b><small>'+g[3]+'</small></button>').join('')+'</nav><main class="casino-table" tabindex="-1"></main><footer><b>最近结算</b><p class="casino-history"></p><small>每次挑战初始 100 · 中途不补领 · 自动保存进度 · 牌局退出视为弃局，弹珠机退出暂停</small><p>纯虚拟娱乐 · 无充值、提现或现金价值</p></footer></div></section>';
     root=container.querySelector('.casino');table=root.querySelector('.casino-table');
     root.querySelectorAll('[data-game]').forEach(b=>b.onclick=()=>open(b.dataset.game));
     root.querySelector('.casino-rules').onclick=showOpening;
     root.querySelector('.casino-restart').onclick=showOpening;
     evaluate();balance();showOpening();
+  }
+  function init(container){
+    stop();
+    const ticket=mountGeneration;
+    if(account){container.textContent='正在读取账号挑战进度……';account.prepare(container,()=>{loadState();mount(container);},()=>ticket===mountGeneration);}
+    else mount(container);
   }
   window.SiteGames=window.SiteGames||{};window.SiteGames[document.currentScript.src]={init,start(){},stop};
 })();

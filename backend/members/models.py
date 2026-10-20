@@ -7,6 +7,18 @@ from django.db import models
 from .email_addresses import normalize_email
 
 
+class CasinoProgress(models.Model):
+    owner = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+                                 related_name="casino_progress")
+    snapshot = models.JSONField(default=dict)
+    revision = models.PositiveBigIntegerField(default=1)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "赌场挑战进度"
+        verbose_name_plural = "赌场挑战进度"
+
+
 class PrivateNote(models.Model):
     """一个账号对应一条便签，所有读写都从当前登录用户出发。"""
     owner = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)

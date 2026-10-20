@@ -1,6 +1,7 @@
 // 六层独立钉阵；固定时间步长，圆形碰撞与斜面反弹决定实际落洞。
 (function () {
   'use strict';
+  const storage=window.CasinoAccount?window.CasinoAccount.storage:localStorage;
   const W=360,H=260,R=5,LEVELS=6,PRIZE=20000,STEP=1/180,KEY='sera-marbles-v1';
   // 固定公开的晋级洞位；调整几何挑战，不篡改实时轨迹或中奖结果。
   const TARGETS=[0,1,3,1,1,4];
@@ -16,8 +17,8 @@
   function fresh(){return {challengeId:window.CasinoWallet?.challengeId||null,inventory:0,queue:0,balls:[],launched:0,lost:0,wins:0,deepest:0,visits:[0,0,0,0,0,0]};}
   let model=fresh(),root,canvas,ctx,raf=0,last=0,acc=0,feed=0,saveClock=0,disposed=true;
   let hits=[],message='买入弹珠，再选择这次要投放的数量。';
-  function load(){model=fresh();try{const s=JSON.parse(localStorage.getItem(KEY));if(!s||s.challengeId!==(window.CasinoWallet?.challengeId||null))return;for(const k of ['inventory','queue','launched','lost','wins','deepest'])if(Number.isSafeInteger(s[k])&&s[k]>=0)model[k]=s[k];if(Array.isArray(s.visits)&&s.visits.length===6&&s.visits.every(n=>Number.isSafeInteger(n)&&n>=0))model.visits=s.visits;model.balls=Array.isArray(s.balls)?s.balls.filter(b=>Number.isInteger(b.level)&&b.level>=0&&b.level<6&&['x','y','vx','vy','age'].every(k=>Number.isFinite(b[k]))&&b.x>=0&&b.x<=W&&b.y>=0&&b.y<=H).slice(0,60):[];}catch(_){} }
-  function save(){try{localStorage.setItem(KEY,JSON.stringify(model));}catch(_){} if(model.challengeId===(window.CasinoWallet?.challengeId||null))window.CasinoWallet?.check?.(); }
+  function load(){model=fresh();try{const s=JSON.parse(storage.getItem(KEY));if(!s||s.challengeId!==(window.CasinoWallet?.challengeId||null))return;for(const k of ['inventory','queue','launched','lost','wins','deepest'])if(Number.isSafeInteger(s[k])&&s[k]>=0)model[k]=s[k];if(Array.isArray(s.visits)&&s.visits.length===6&&s.visits.every(n=>Number.isSafeInteger(n)&&n>=0))model.visits=s.visits;model.balls=Array.isArray(s.balls)?s.balls.filter(b=>Number.isInteger(b.level)&&b.level>=0&&b.level<6&&['x','y','vx','vy','age'].every(k=>Number.isFinite(b[k]))&&b.x>=0&&b.x<=W&&b.y>=0&&b.y<=H).slice(0,60):[];}catch(_){} }
+  function save(){try{storage.setItem(KEY,JSON.stringify(model));}catch(_){} if(model.challengeId===(window.CasinoWallet?.challengeId||null))window.CasinoWallet?.check?.(); }
   function notify(text){message=text;if(root)root.querySelector('.marble-message').textContent=message;}
   function update(){if(!root)return;root.querySelector('[data-count="inventory"]').textContent=model.inventory;root.querySelector('[data-count="active"]').textContent=model.balls.length;root.querySelector('[data-count="queue"]').textContent=model.queue;root.querySelector('[data-count="wins"]').textContent=model.wins;root.querySelector('[data-count="deepest"]').textContent=model.deepest+' / 6';root.querySelector('.marble-launch').disabled=model.inventory===0||window.CasinoWallet?.canPlay===false;root.querySelector('.marble-buy').disabled=window.CasinoWallet?.canPlay===false;}
   function count(input){const n=Number(input.value);return Number.isSafeInteger(n)&&n>=1&&n<=1000?n:null;}
@@ -67,7 +68,7 @@
     }
   }
   function frame(t){if(disposed)return;if(window.CasinoWallet?.canPlay===false){stop();update();return;}if(!last)last=t;const elapsed=Math.min((t-last)/1000,.05);last=t;acc+=elapsed;while(acc>=STEP){physics(STEP);acc-=STEP;}draw();saveClock+=elapsed;if(saveClock>=1){saveClock=0;save();}raf=requestAnimationFrame(frame);}
-  function stop(){disposed=true;cancelAnimationFrame(raf);if(root)save();last=0;acc=0;}
+  function stop(){const running=!disposed;disposed=true;cancelAnimationFrame(raf);if(root&&running)save();last=0;acc=0;}
   function init(container){stop();load();hits=[];container.innerHTML='<div class="marble-machine"><header><small>THE DEEP WELL · MECHANICAL CASCADE</small><h2>深井弹珠</h2><p>六层钉阵，三十个落洞。只有每层金色通道通往下一层；其余落洞回收弹珠。穿过六层并命中最终金洞，领取金库大奖。</p></header><div class="marble-console"><label>购买数量 <input class="marble-buy-count" type="number" min="1" max="1000" value="25" step="1"></label><button class="marble-buy">购买 · 1 筹码 / 颗</button><label>投放数量 <input class="marble-launch-count" type="number" min="1" max="1000" value="10" step="1"></label><button class="marble-launch">投放弹珠</button><button class="marble-pause">暂停</button></div><div class="marble-stats"><span>库存 <b data-count="inventory">0</b></span><span>待投 <b data-count="queue">0</b></span><span>机内 <b data-count="active">0</b></span><span>最深层 <b data-count="deepest">0</b></span><span>大奖 <b data-count="wins">0</b></span></div><p class="marble-message" role="status">弹珠与库存会自动保存；离开牌桌后暂停，回来继续。</p><canvas class="marble-board" width="760" height="900" role="img" aria-label="六层弹珠机实时画面，每层五个落洞，金色标记为通往下一层的唯一通道。"></canvas><p class="marble-note">每层从左到右、从上到下排列。金色箭头是唯一晋级通道。重力、钉柱与导流斜面的碰撞决定落点，弹珠之间互不碰撞；每批最多排入 1,000 颗，机内最多 60 颗。</p></div>';
     root=container.querySelector('.marble-machine');root.querySelector('.marble-note').textContent='每层从左到右、从上到下排列。金色箭头是唯一晋级通道。重力、钉柱、斜面及同层弹珠之间的碰撞决定落点；每批最多排入 1,000 颗，机内最多 60 颗。';canvas=root.querySelector('canvas');ctx=canvas.getContext('2d');const ratio=Math.min(window.devicePixelRatio||1,2);canvas.width=760*ratio;canvas.height=900*ratio;ctx.scale(ratio,ratio);let paused=false;
     root.querySelector('.marble-buy').onclick=()=>{const n=count(root.querySelector('.marble-buy-count'));if(!n){notify('购买数量请输入 1–1,000 的整数。');return;}if(!window.CasinoWallet.change(-n)){notify('筹码不足，请减少购买数量。');return;}model.inventory+=n;save();update();notify('已购买 '+n+' 颗弹珠，花费 '+n+' 筹码。');};

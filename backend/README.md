@@ -205,3 +205,12 @@ Quick Tunnel 用于测试，不保证持续可用，隧道停止则网址失效�
 视频通过流式文件响应和 HTTP Range 发送，不把整段视频读入 Python 内存。`members/static_files.py` 包含 WhiteNoise 6.12 单字节 Range 的兼容处理，相关边界有测试。
 
 迁移保留 URL 和资源相对路径；浏览器中小游戏、花语工具保存的 `localStorage` 按域名/端口隔离，不会从 GitHub 地址自动转移到 Mint 地址。
+
+
+## 技术区账号游戏存档
+
+Mint 技术区加载专用 casino-account.js，登录用户的赌场挑战、弹珠库存/排队/轨迹及金库统计保存到 CasinoProgress（每账号一份）。接口仅从登录会话确定归属，要求 CSRF、规范化 JSON 和存档版本一致；多设备并发时拒绝旧版本覆盖，并在旧页暂停挑战。浏览器保留按账号隔离的待同步副本，网络恢复后重试；首次看到未归属账号的旧浏览器进度时由用户选择是否导入。
+
+GitHub/离线静态版继续保存到浏览器。Mint 构建只在技术页注入账号桥接；现有挑战规则、退出牌局视为弃局和弹珠离场暂停继续有效。此接口保存个人虚拟游戏进度，游戏结算仍由前端执行，不应直接用于可信排行榜或任何有现金价值的场景。
+
+回归：Django members.test_casino；Node scripts/test-casino-account.cjs、scripts/test-casino.cjs、scripts/test-casino-games.cjs。
