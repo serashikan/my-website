@@ -129,10 +129,12 @@ def email_verify(request):
             destination = ("account" if operation.kind == EmailOperation.Kind.REGISTRATION
                            else "account_info" if request.user.is_authenticated else "login")
             response = redirect(destination)
-            response["Referrer-Policy"] = "no-referrer"
+            response["Referrer-Policy"] = "same-origin"
             return response
     response = render(request, "registration/email_verify.html", {"form": form})
-    response["Referrer-Policy"] = "no-referrer"
+    # Safari 的同源表单可能不带 Origin，HTTPS CSRF 检查仍需要同源 Referer。
+    # 验证令牌在 fragment 中，浏览器从不会把 fragment 作为 Referer 发送。
+    response["Referrer-Policy"] = "same-origin"
     return response
 
 

@@ -3,6 +3,7 @@ import re
 from unittest.mock import patch
 from urllib.parse import unquote
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core import mail
 from django.core.cache import cache
@@ -13,6 +14,7 @@ from django.utils import timezone
 from .email_services import (MailDeliveryError, create_email_request,
                              create_registration, send_verification)
 from .models import AccountEmail, EmailOperation
+from .test_public import PUBLIC_HOST, PUBLIC_OVERRIDES
 
 
 @override_settings(
@@ -109,7 +111,7 @@ class EmailViewTests(TestCase):
             verify.assert_not_called()
         operation.refresh_from_db()
         self.assertEqual(operation.status, EmailOperation.Status.PENDING)
-        self.assertEqual(response.headers["Referrer-Policy"], "no-referrer")
+        self.assertEqual(response.headers["Referrer-Policy"], "same-origin")
         self.assertNotContains(response, token)
         self.assertContains(response, 'name="token"')
         self.assertContains(response, "email-verify.js")
@@ -231,3 +233,83 @@ class EmailViewTests(TestCase):
         self.assertIsNotNone(AccountEmail.objects.get(user=self.owner).verified_at)
         self.assertFalse(EmailOperation.objects.filter(status=EmailOperation.Status.AWAITING_REVIEW).exists())
         self.assertContains(self.client.get(reverse("password_change")), 'name="old_password"')
+
+
+@override_settings(**PUBLIC_OVERRIDES)
+@override_settings(
+    EMAIL_VERIFICATION_ENABLED=True, SITE_PUBLIC_URL=f"https://{PUBLIC_HOST}",
+    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    EMAIL_VERIFICATION_COOLDOWN=0, EMAIL_VERIFICATION_MAX_PER_HOUR=50,
+    PASSWORD_HASHERS=["django.contrib.auth.hashers.MD5PasswordHasher"],
+)
+class PublicEmailVerificationCsrfTests(TestCase):
+    """真实公网 HTTPS/安全 Cookie：Safari 无 Origin 时仍严格核验 Referer。"""
+
+    password = "test-only-Safari-Email-Passphrase-753!"
+
+    def setUp(self):
+        cache.clear()
+        self.client = Client(enforce_csrf_checks=True)
+        self.operation = create_registration(
+            "safari-pending-reader", self.password, "safari-pending@example.test",
+        )
+        send_verification(self.operation)
+        self.token = unquote(re.search(r"#token=([^\s<>]+)", mail.outbox[-1].body).group(1))
+        self.meta = {
+            "HTTP_HOST": PUBLIC_HOST,
+            "HTTP_X_FORWARDED_PROTO": "https",
+            "REMOTE_ADDR": "127.0.0.1",
+            "HTTP_CF_CONNECTING_IP": "198.51.100.53",
+        }
+        self.page = self.client.get(reverse("email_verify"), **self.meta)
+        self.assertEqual(self.page.status_code, 200)
+        self.assertTrue(self.page.wsgi_request.is_secure())
+
+    def tearDown(self):
+        cache.clear()
+
+    def submit(self, **headers):
+        return self.client.post(reverse("email_verify"), {
+            "token": self.token, "password": self.password,
+            "csrfmiddlewaretoken": self.client.cookies[settings.CSRF_COOKIE_NAME].value,
+        }, **{**self.meta, **headers})
+
+    def assert_unconsumed(self, response):
+        self.assertEqual(response.status_code, 403)
+        self.operation.refresh_from_db()
+        self.assertEqual(self.operation.status, EmailOperation.Status.PENDING)
+        self.assertFalse(get_user_model().objects.filter(username=self.operation.username).exists())
+        self.assertNotIn("_auth_user_id", self.client.session)
+
+    def test_confirmation_policy_preserves_same_origin_referer_and_secure_cookie(self):
+        self.assertEqual(self.page.headers["Referrer-Policy"], "same-origin")
+        self.assertContains(self.page, '<meta name="referrer" content="same-origin">')
+        self.assertNotContains(self.page, 'content="no-referrer"')
+        self.assertTrue(settings.CSRF_COOKIE_NAME.startswith("__Host-"))
+        self.assertTrue(self.client.cookies[settings.CSRF_COOKIE_NAME]["secure"])
+        self.assertIn("no-store", self.page.headers["Cache-Control"])
+        self.operation.refresh_from_db()
+        self.assertEqual(self.operation.status, EmailOperation.Status.PENDING)
+
+    def test_https_cookie_and_token_with_same_origin_referer_without_origin_confirms(self):
+        response = self.submit(HTTP_REFERER=f"https://{PUBLIC_HOST}{reverse('email_verify')}")
+        self.assertNotIn("HTTP_ORIGIN", response.wsgi_request.META)
+        self.assertTrue(response.wsgi_request.is_secure())
+        self.assertRedirects(response, reverse("account"), fetch_redirect_response=False)
+        self.operation.refresh_from_db()
+        self.assertEqual(self.operation.status, EmailOperation.Status.COMPLETED)
+        user = get_user_model().objects.get(username=self.operation.username)
+        self.assertEqual(self.client.session["_auth_user_id"], str(user.pk))
+        self.assertTrue(self.client.cookies[settings.SESSION_COOKIE_NAME]["secure"])
+
+    def test_cross_site_referer_is_rejected_even_with_correct_cookie_and_token(self):
+        self.assert_unconsumed(self.submit(HTTP_REFERER="https://attacker.example/"))
+
+    def test_missing_origin_and_referer_remains_rejected_with_correct_cookie_and_token(self):
+        self.assert_unconsumed(self.submit())
+
+    def test_cross_site_origin_overrides_a_same_origin_referer_and_is_rejected(self):
+        self.assert_unconsumed(self.submit(
+            HTTP_ORIGIN="https://attacker.example",
+            HTTP_REFERER=f"https://{PUBLIC_HOST}{reverse('email_verify')}",
+        ))
