@@ -9,6 +9,8 @@
     <link rel="icon" href="图片/favicon.png" type="image/png">
     <!-- 全站共享样式 -->
     <link rel="stylesheet" href="风格.css">
+    <link rel="stylesheet" href="site-pdf.css">
+    <script src="site-pdf.js"></script>
 
     <!-- 本地内置，离线 / file:// 双击都能用 -->
     <script src="站点内容.js"></script>
@@ -69,6 +71,7 @@
         // 3. 给每个菜单加点击
         links.forEach(link => {
             link.onclick = async function () {
+                if (txtBox._module) { txtBox._module.stop(); txtBox._module = null; }
 
                 // ======================
                 // 第一步：全部隐藏
@@ -106,16 +109,8 @@
                     }
 
                     if (ext === 'pdf') {
-                        // PDF 直接交给浏览器自带的阅读器，不走 fetch，
-                        // 所以双击（file://）打开也能看。
-                        // 用 createElement 赋值 src，中文路径由浏览器自己转义。
-                        txtBox.innerHTML = '';
-                        const view = document.createElement('embed');
-                        view.className = 'pdf-view';
-                        view.type = 'application/pdf';
-                        view.src = filePath;
-                        txtBox.appendChild(view);
                         txtBox.classList.add("active");
+                        txtBox._module = window.SitePDF.mount(txtBox, filePath, this.textContent.trim());
                     }
                 }
 

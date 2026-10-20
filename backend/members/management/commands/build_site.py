@@ -9,13 +9,13 @@ from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
 ROOT_PAGES = {"index.html", "主页.html", "文学.html", "音乐.html", "数学.html", "技术.html", "塞拉.html", "米露.html"}
-ROOT_SCRIPTS = {"鼠标.js", "花火.js", "站点内容.js"}
+ROOT_SCRIPTS = {"鼠标.js", "花火.js", "站点内容.js", "site-pdf.js"}
 ASSET_EXTENSIONS = {
     "图片": {".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".ico", ".avif"},
     "字体": {".ttf", ".otf", ".woff", ".woff2"},
     "音频文件": {".mp4", ".m4a", ".mp3", ".ogg", ".wav", ".webm", ".jpg", ".png", ".webp"},
     "txt文件": {".txt", ".md", ".pdf"},
-    "lib": {".js"},
+    "lib": {".js", ".mjs", ".wasm", ".bcmap", ".pfb", ".ttf", ".otf"},
     "miku": {".png", ".gif", ".webp"},
     "webmeji-main": {".js", ".css", ".png", ".gif", ".webp"},
 }

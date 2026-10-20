@@ -20,9 +20,10 @@ class PrivateSiteTests(TestCase):
             "index.html": b"private homepage", "站点内容.js": b"private article snapshot",
             "音乐.html": b"music page", "音频文件/movie.mp4": b"0123456789abcdef",
             "txt文件/article.pdf": b"%PDF-private", "图片/test.png": b"private image",
+            "lib/pdfjs/pdf.min.mjs": b"export const test = true;",
         }.items():
             path = self.site / name
-            path.parent.mkdir(exist_ok=True)
+            path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(content)
         self.override = override_settings(
             WHITENOISE_ROOT=self.site, PRIVATE_SITE_ROOT=self.site,
@@ -54,6 +55,15 @@ class PrivateSiteTests(TestCase):
         self.assertIn("no-store", response.headers["Cache-Control"])
         self.assertNotIn("Access-Control-Allow-Origin", response.headers)
         self.assertIn("Cookie", response.headers["Vary"])
+
+    def test_pdf_worker_modules_have_javascript_mime_and_require_login(self):
+        self.assertEqual(self.client.get("/lib/pdfjs/pdf.min.mjs").status_code, 302)
+        self.client.force_login(self.user)
+        response = self.client.get("/lib/pdfjs/pdf.min.mjs")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(response.headers["Content-Type"].split(";")[0], ("text/javascript", "application/javascript"))
+        self.assertIn("no-store", response.headers["Cache-Control"])
+        response.close()
 
     def test_static_pages_and_embedded_pdfs_only_allow_same_origin_frames(self):
         self.client.force_login(self.user)
@@ -152,6 +162,9 @@ class SiteBuildTests(TestCase):
             files.update({
                 "站点内容.js": "snapshot", "miku/shime1.png": "sprite",
                 "webmeji-main/config.js": "config", "lib/three.min.js": "three",
+                "lib/pdfjs/pdf.min.mjs": "pdf library", "lib/pdfjs/wasm/test.wasm": "wasm",
+                "lib/pdfjs/cmaps/test.bcmap": "cmap", "lib/pdfjs/standard_fonts/font.pfb": "font",
+                "site-pdf.js": "reader", "site-pdf.css": "reader style",
                 "game-vault.js": "game", "音频文件/movie.mp4": "movie",
                 "txt文件/article.md": "article", "txt文件/article.pdf": "pdf",
                 ".git/config": "secret", "ai_workspace/draft.html": "draft",
@@ -169,7 +182,9 @@ class SiteBuildTests(TestCase):
             for name in [".git/config", "ai_workspace/draft.html", "txt文件/code.py", "图片/leak.png",
                          "txt文件/article.tex", "txt文件/article.log", "floriography 2/scripts/build.js"]:
                 self.assertNotIn(name, manifest)
-            for name in ["miku/shime1.png", "game-vault.js", "lib/three.min.js", "音频文件/movie.mp4",
+            for name in ["site-pdf.js", "site-pdf.css", "lib/pdfjs/pdf.min.mjs",
+                         "lib/pdfjs/wasm/test.wasm", "lib/pdfjs/cmaps/test.bcmap",
+                         "lib/pdfjs/standard_fonts/font.pfb", "miku/shime1.png", "game-vault.js", "lib/three.min.js", "音频文件/movie.mp4",
                          "txt文件/article.md", "floriography 2/data/flowers.js"]:
                 self.assertIn(name, manifest)
             self.assertIn("/static/members/site-nav.js", (target / "主页.html").read_text())
